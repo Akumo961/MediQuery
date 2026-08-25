@@ -1,0 +1,25 @@
+# Secrets and local state
+.env
+*.db
+private_uploads/
+uploads/
+data/raw/
+data/processed/
+models/
+results/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+mediqueryvenv310/
+
+# Node and editors
+node_modules/
+.idea/
+.vscode/
+build/
+dist/
