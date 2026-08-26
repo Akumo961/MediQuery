@@ -1,18 +1,59 @@
 # Testing
 
-Run the local checks after installing `requirements.txt`:
+MediQuery uses synthetic data only. No real patient data belongs in the repository, fixtures, logs, CI artifacts, or bug reports.
+
+## Local quality gate
+
+After installing `requirements.txt`:
 
 ```bash
+python -m black --check src tests app.py
+python -m flake8 src tests app.py
 python -m pytest -q
 python -m compileall -q src app.py
 ```
 
-The test suite uses synthetic data only. Coverage includes report MIME/signature/size validation, structured-value preservation, signup/consent, authentication and authorization, invalid PDF uploads, owner isolation, deletion, RAG provenance/injection boundaries, rate limiting, privacy-safe metrics, billing plan definitions, durable usage metering, idempotency, entitlement enforcement, authenticated billing summaries, honest unconfigured checkout behavior, and protection of the operational metrics endpoint.
+The repository CI workflow in `.github/workflows/ci.yml` is the authoritative repeatable quality gate for formatting, linting, tests, compilation, and credential-shaped secret scanning.
 
-Phase 9 billing tests deliberately do not pretend that payment processing is live. A real payment-provider adapter must be tested separately with provider sandbox credentials and webhook fixtures before charging customers.
+## Test coverage
 
-Phase 10 observability tests verify that metrics are aggregate and that the metrics endpoint is not publicly readable without an explicitly configured collector token. Application logs intentionally record only request ID, method, route, status, and latency; they do not log report contents, filenames, tokens, or email addresses.
+The suite covers:
 
-Before launch, add fixture-based tests for multi-page and malformed PDFs, upload resource limits, storage failures, migrations, RAG source attribution, prompt injection, urgent-language UX, keyboard/screen-reader flows, and browser-level sign-up/upload/delete journeys. Use synthetic reports only; do not commit patient data.
+- PDF MIME, extension, signature, size, malformed-content, and page-count validation
+- Multi-page synthetic PDF handling
+- Password-protected/encrypted PDF rejection
+- Structured-value preservation including units, ranges, flags, page numbers, and evidence
+- Synthetic report extraction failure/attention states
+- Signup and medical-limitations acknowledgement
+- Duplicate-account protection
+- Login success and invalid-credential handling
+- Authentication and authorization boundaries
+- Owner isolation for reports
+- End-to-end authenticated upload → history → detail → delete flow
+- Account deletion and access revocation
+- Unsupported upload-format handling
+- Report deletion
+- Rate limiting
+- Privacy-safe aggregate metrics
+- RAG provenance, relevance selection, citations, bounded context, and prompt-injection framing
+- Billing plan definitions, durable usage metering, idempotency, entitlement enforcement, authenticated billing summaries, honest unconfigured checkout behavior, and protected operational metrics
 
-The repository CI workflow in `.github/workflows/ci.yml` is the authoritative repeatable quality gate for formatting, linting, tests, compilation, and credential-shaped secret scanning. Dependency/SBOM scanning and managed runtime monitoring should be enabled in the production environment.
+## Synthetic fixtures
+
+`tests/test_phase11_quality.py` generates PDFs in memory with `pypdf`. Fixtures are intentionally synthetic and contain no patient identifiers or clinical records.
+
+## Provider-bound testing
+
+Some functionality cannot be truthfully tested as a live external service inside the unit/API suite:
+
+- Stripe/payment-provider sandbox and webhook delivery
+- Production object storage and backup deletion
+- Managed telemetry/error-reporting delivery
+- OCR provider behavior
+- Production database migration/rollback against the deployed database engine
+
+Those require provider-specific sandbox credentials and deployment fixtures. The application must not simulate successful payment, clinical validation, or provider delivery merely to make tests pass.
+
+## Remaining release-level tests
+
+Before a real customer launch, add browser-level Playwright/Cypress coverage for responsive layout, keyboard navigation, screen-reader semantics, sign-up/upload/review/delete journeys, and urgent-language UX. Run those against the deployed staging environment. Also enable dependency/SBOM scanning and managed runtime monitoring in production.
