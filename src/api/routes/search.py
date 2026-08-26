@@ -1,14 +1,17 @@
 """Search endpoints for medical literature discovery."""
 
+from pathlib import Path
+import sys
+from time import perf_counter
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
-import sys
-from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from data_loader import MedicalDataLoader
+from src.core.observability import elapsed_ms, metrics
 
 router = APIRouter()
 
@@ -34,63 +37,79 @@ class SearchResult(BaseModel):
 @router.post("/literature", response_model=List[SearchResult])
 async def search_literature(search_query: SearchQuery):
     """Search PubMed and rank papers by semantic or keyword relevance."""
+    started = perf_counter()
+    metrics.increment("rag.searches")
     try:
         papers = MedicalDataLoader().fetch_pubmed_papers(
             search_query.query,
-            search_query.max_results
+            search_query.max_results,
         )
 
         if not papers:
+            metrics.increment("rag.empty_results")
             return []
 
-        documents = [f"{paper.get('title', '')} {paper.get('abstract', '')}" for paper in papers]
+        documents = [
+            f"{paper.get('title', '')} {paper.get('abstract', '')}" for paper in papers
+        ]
 
         if search_query.search_type in {"semantic", "hybrid"}:
-            # Optional legacy dependency: import only when semantic search is requested.
             from models.text_models import MedicalTextModel
+
             similar_docs = MedicalTextModel().find_similar_documents(
                 search_query.query,
                 documents,
-                top_k=search_query.max_results
+                top_k=search_query.max_results,
             )
 
             results = []
             for doc_info in similar_docs:
                 paper = papers[doc_info["index"]]
-                results.append(SearchResult(
+                results.append(
+                    SearchResult(
+                        title=paper.get("title", "Unknown Title"),
+                        content=paper.get("abstract", "No abstract available"),
+                        similarity=doc_info["similarity"],
+                        source="PubMed",
+                        metadata={
+                            "authors": paper.get("authors", []),
+                            "journal": paper.get("journal", "Unknown"),
+                            "year": paper.get("year", "Unknown"),
+                        },
+                    )
+                )
+            metrics.observe_ms("rag.search_latency", elapsed_ms(started))
+            return results
+
+        results = []
+        query_terms = set(search_query.query.lower().split())
+        for paper in papers[: search_query.max_results]:
+            haystack = f"{paper.get('title', '')} {paper.get('abstract', '')}".lower()
+            overlap = sum(1 for term in query_terms if term in haystack)
+            similarity = overlap / max(len(query_terms), 1)
+            results.append(
+                SearchResult(
                     title=paper.get("title", "Unknown Title"),
                     content=paper.get("abstract", "No abstract available"),
-                    similarity=doc_info["similarity"],
+                    similarity=similarity,
                     source="PubMed",
                     metadata={
                         "authors": paper.get("authors", []),
                         "journal": paper.get("journal", "Unknown"),
-                        "year": paper.get("year", "Unknown")
-                    }
-                ))
-
-            return results
-        results = []
-        query_terms = set(search_query.query.lower().split())
-        for paper in papers[:search_query.max_results]:
-            haystack = f"{paper.get('title', '')} {paper.get('abstract', '')}".lower()
-            overlap = sum(1 for term in query_terms if term in haystack)
-            similarity = overlap / max(len(query_terms), 1)
-            results.append(SearchResult(
-                title=paper.get("title", "Unknown Title"),
-                content=paper.get("abstract", "No abstract available"),
-                similarity=similarity,
-                source="PubMed",
-                metadata={
-                    "authors": paper.get("authors", []),
-                    "journal": paper.get("journal", "Unknown"),
-                    "year": paper.get("year", "Unknown")
-                }
-            ))
+                        "year": paper.get("year", "Unknown"),
+                    },
+                )
+            )
+        metrics.observe_ms("rag.search_latency", elapsed_ms(started))
         return results
 
-    except Exception:
-        raise HTTPException(status_code=502, detail="Literature search is temporarily unavailable")
+    except Exception as exc:
+        metrics.increment("rag.failures")
+        metrics.observe_ms("rag.search_latency", elapsed_ms(started))
+        raise HTTPException(
+            status_code=502,
+            detail="Literature search is temporarily unavailable",
+        ) from exc
 
 
 @router.get("/suggestions")
@@ -101,9 +120,7 @@ async def get_search_suggestions(q: str = Query(..., description="Partial query"
         "Machine learning in radiology",
         "Cancer immunotherapy research",
         "Diabetes management guidelines",
-        "Cardiovascular disease prevention"
+        "Cardiovascular disease prevention",
     ]
-
-    # Filter suggestions based on query
     filtered = [s for s in suggestions if q.lower() in s.lower()]
     return {"suggestions": filtered[:5]}
