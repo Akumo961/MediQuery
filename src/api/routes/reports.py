@@ -1,21 +1,19 @@
 """Authenticated, owner-scoped report lifecycle endpoints."""
 
 from pathlib import Path
+from time import perf_counter
 from uuid import uuid4
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from src.api.dependencies import current_user
 from src.api.schemas import PlanResponse, ReportResponse
+from src.core.billing import can_consume, current_usage, get_plan, record_usage
 from src.core.database import AuditEvent, Report, ReportFinding, User, get_db
 from src.core.settings import get_settings
-from src.core.observability import metrics
-from src.services.report_analysis import (
-    ReportValidationError,
-    extract_report,
-    validate_pdf,
-)
+from src.core.observability import elapsed_ms, metrics
+from src.services.report_analysis import ReportValidationError, extract_report, validate_pdf
 
 router = APIRouter()
 
@@ -23,11 +21,7 @@ router = APIRouter()
 def _get_owned_report(report_id: str, user: User, db: Session) -> Report:
     report = db.scalar(
         select(Report)
-        .where(
-            Report.id == report_id,
-            Report.owner_id == user.id,
-            Report.deleted_at.is_(None),
-        )
+        .where(Report.id == report_id, Report.owner_id == user.id, Report.deleted_at.is_(None))
         .options(selectinload(Report.findings))
     )
     if not report:
@@ -41,22 +35,18 @@ async def upload_report(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ) -> Report:
+    started = perf_counter()
     settings = get_settings()
-    count = (
-        db.scalar(
-            select(func.count())
-            .select_from(Report)
-            .where(Report.owner_id == user.id, Report.deleted_at.is_(None))
-        )
-        or 0
-    )
-    if user.plan == "free" and count >= settings.free_report_limit:
-        raise HTTPException(status_code=402, detail="Free plan report limit reached")
+    if not can_consume(db, user, "report"):
+        metrics.increment("billing.report_limit_reached")
+        raise HTTPException(status_code=402, detail="Report limit reached for the current plan")
+
     raw = await file.read(settings.max_report_bytes + 1)
     try:
         validate_pdf(file.filename, file.content_type, raw, settings.max_report_bytes)
         extraction = extract_report(raw, settings.max_pdf_pages)
     except ReportValidationError as exc:
+        metrics.increment("reports.upload_failed")
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     finally:
         await file.close()
@@ -78,83 +68,45 @@ async def upload_report(
     db.flush()
     for finding in extraction.findings:
         db.add(ReportFinding(report_id=report.id, **finding.__dict__))
-    db.add(
-        AuditEvent(
-            actor_id=user.id,
-            action="report_uploaded",
-            target_id=report.id,
-            metadata_json={
-                "pages": extraction.page_count,
-                "finding_count": len(extraction.findings),
-            },
-        )
-    )
+    db.add(AuditEvent(actor_id=user.id, action="report_uploaded", target_id=report.id, metadata_json={"pages": extraction.page_count, "finding_count": len(extraction.findings)}))
+    if not record_usage(db, user, "report", idempotency_key=f"report:{report.id}"):
+        target.unlink(missing_ok=True)
+        db.rollback()
+        metrics.increment("billing.report_limit_race")
+        raise HTTPException(status_code=402, detail="Report limit reached for the current plan")
     db.commit()
     db.refresh(report)
     metrics.increment("reports.processed")
+    metrics.observe_ms("reports.processing_latency", elapsed_ms(started))
     if extraction.note:
         metrics.increment("reports.extraction_attention_required")
     return _get_owned_report(report.id, user, db)
 
 
 @router.get("", response_model=list[ReportResponse])
-def list_reports(
-    user: User = Depends(current_user), db: Session = Depends(get_db)
-) -> list[Report]:
-    return list(
-        db.scalars(
-            select(Report)
-            .where(Report.owner_id == user.id, Report.deleted_at.is_(None))
-            .options(selectinload(Report.findings))
-            .order_by(Report.created_at.desc())
-        )
-    )
+def list_reports(user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[Report]:
+    return list(db.scalars(select(Report).where(Report.owner_id == user.id, Report.deleted_at.is_(None)).options(selectinload(Report.findings)).order_by(Report.created_at.desc())))
 
 
 @router.get("/plan", response_model=PlanResponse)
-def get_plan(
-    user: User = Depends(current_user), db: Session = Depends(get_db)
-) -> PlanResponse:
-    settings = get_settings()
-    used = (
-        db.scalar(
-            select(func.count())
-            .select_from(Report)
-            .where(Report.owner_id == user.id, Report.deleted_at.is_(None))
-        )
-        or 0
-    )
-    return PlanResponse(
-        plan=user.plan,
-        reports_used=used,
-        reports_limit=None if user.plan == "pro" else settings.free_report_limit,
-    )
+def get_plan_status(user: User = Depends(current_user), db: Session = Depends(get_db)) -> PlanResponse:
+    plan = get_plan(user, db)
+    return PlanResponse(plan=plan.name, reports_used=current_usage(db, user.id, "report"), reports_limit=plan.report_limit)
 
 
 @router.get("/{report_id}", response_model=ReportResponse)
-def get_report(
-    report_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)
-) -> Report:
+def get_report(report_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)) -> Report:
     return _get_owned_report(report_id, user, db)
 
 
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_report(
-    report_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)
-) -> None:
+def delete_report(report_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)) -> None:
     report = _get_owned_report(report_id, user, db)
     settings = get_settings()
     target = settings.upload_root / report.storage_key
     if target.exists():
         target.unlink()
     db.delete(report)
-    db.add(
-        AuditEvent(
-            actor_id=user.id,
-            action="report_deleted",
-            target_id=report_id,
-            metadata_json={},
-        )
-    )
+    db.add(AuditEvent(actor_id=user.id, action="report_deleted", target_id=report_id, metadata_json={}))
     db.commit()
     metrics.increment("reports.deleted")
