@@ -28,6 +28,8 @@ flowchart LR
   K --> KB[(Curated, versioned knowledge index)]
   K --> G[Grounded AI adapter]
   G --> R
+  A --> B[Billing & entitlement service]
+  B --> P[Payment provider adapter]
   A --> O[Redacted metrics and error reporting]
 ```
 
@@ -39,16 +41,21 @@ flowchart LR
 4. Generic medical knowledge is stored separately from patient reports. Retrieval carries source, publisher, version, URL/licence, chunk ID, and relevance score; untrusted report text is never treated as system instruction.
 5. An AI response is optional and must consume only bounded, attributed evidence. The UI labels “extracted from report” separately from “general educational information.”
 6. Deletion tombstones the database record and queues private-object deletion. In production, retention and backup deletion must be configured with the storage provider.
+7. Billing never trusts a browser claim of payment. Entitlements are resolved server-side from the active subscription state and durable monthly usage events. A payment-provider adapter is responsible for verified webhook reconciliation.
+8. Operational telemetry contains only aggregate counters, request IDs, route/status/latency information, and non-sensitive failure categories. The metrics endpoint requires an explicit collector token.
 
 ## Implemented foundation
 
 - FastAPI API configuration with explicit CORS allowlist and security headers.
 - Environment validation and fail-closed production settings.
 - Password-hash/JWT authentication helpers and owner-scoped data-access design.
-- SQLAlchemy models for users, reports, extracted findings, and non-PHI audit events.
+- SQLAlchemy models for users, reports, extracted findings, non-PHI audit events, subscriptions, and usage events.
 - Validated PDF upload/processing primitives and a structured report schema.
 - A deterministic lab-value parser that preserves value, unit, range, flag, and page evidence when present.
-- A plan/entitlement abstraction, private-storage interface, redacted event interface, and testable service boundaries.
+- Server-side free/pro plan entitlements with monthly report and AI-request limits, idempotent usage recording, and an authenticated billing summary.
+- A provider-neutral checkout boundary that returns no fake success when a payment provider is unconfigured.
+- Request IDs, safe latency/status counters, report/RAG failure counters, rate-limit counters, and a protected aggregate metrics endpoint.
+- A deterministic RAG/search telemetry layer that records timing and failure categories without recording query contents as metric dimensions.
 
 ## Planned deployment topology
 
@@ -73,7 +80,7 @@ The current repository has local FAISS utility classes but no integrated, trustw
 
 ## Operational interfaces
 
-`Settings` is the single environment boundary. Storage, billing, AI, and observability must receive configuration server-side; browser code must receive no provider secret. The API uses typed request/response schemas and emits stable safe error codes. Production use requires a managed error reporter and metric sink configured to redact PHI.
+`Settings` is the single environment boundary. Storage, billing, AI, and observability receive configuration server-side; browser code must receive no provider secret. Billing exposes an authenticated summary and a provider-hosted checkout boundary, while subscription state is stored independently of the payment vendor. Observability exposes only protected aggregate metrics and safe structured request logs. The API uses typed request/response schemas and stable safe error messages. Production use requires a managed error reporter and metric sink configured to redact PHI.
 
 ## Why this architecture is cost-conscious
 
