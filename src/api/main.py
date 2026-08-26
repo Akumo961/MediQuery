@@ -6,10 +6,11 @@ import logging
 import os
 from time import perf_counter
 from uuid import uuid4
+
+import uvicorn
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import uvicorn
 
 from src.api.routes import auth, billing, reports, search
 from src.core.database import create_database
@@ -68,7 +69,12 @@ async def security_headers(request: Request, call_next):
         response = await call_next(request)
     except Exception:
         metrics.increment("api.unhandled_error")
-        logger.exception("request_failed request_id=%s method=%s path=%s", request_id, request.method, request.url.path)
+        logger.exception(
+            "request_failed request_id=%s method=%s path=%s",
+            request_id,
+            request.method,
+            request.url.path,
+        )
         raise
     latency = elapsed_ms(started)
     metrics.observe_ms("api.request_latency", latency)
@@ -80,7 +86,9 @@ async def security_headers(request: Request, call_next):
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
     if settings.environment.lower() == "production":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
     logger.info(
         "request_complete request_id=%s method=%s path=%s status=%s latency_ms=%d",
         request_id,
@@ -112,9 +120,15 @@ async def health_check():
 
 
 @app.get("/health/metrics")
-async def health_metrics(x_metrics_token: str | None = Header(default=None, alias="X-Metrics-Token")):
+async def health_metrics(
+    x_metrics_token: str | None = Header(default=None, alias="X-Metrics-Token"),
+):
     """Expose aggregate telemetry only to an explicitly configured collector."""
-    if not settings.metrics_token or not x_metrics_token or not hmac.compare_digest(x_metrics_token, settings.metrics_token):
+    if (
+        not settings.metrics_token
+        or not x_metrics_token
+        or not hmac.compare_digest(x_metrics_token, settings.metrics_token)
+    ):
         raise HTTPException(status_code=404, detail="Not found")
     return {"metrics": metrics.snapshot()}
 
