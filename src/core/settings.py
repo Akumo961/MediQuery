@@ -28,7 +28,6 @@ class Settings(BaseSettings):
     free_report_limit: int = Field(default=3, ge=0)
     billing_checkout_url: str | None = None
     metrics_token: str | None = None
-    telemetry_enabled: bool = True
 
     @field_validator("cors_origins", mode="before")
     @classmethod
