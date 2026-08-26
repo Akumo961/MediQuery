@@ -7,10 +7,12 @@ python -m pytest -q
 python -m compileall -q src app.py
 ```
 
-The included tests use only synthetic strings and invalid files. They cover report MIME/signature/size validation, structured-value preservation, signup/consent, authorization required for report routes, rejection of an invalid PDF upload, owner isolation, deletion, RAG provenance/injection boundaries, and rate-limit/metric primitives.
+The test suite uses synthetic data only. Coverage includes report MIME/signature/size validation, structured-value preservation, signup/consent, authentication and authorization, invalid PDF uploads, owner isolation, deletion, RAG provenance/injection boundaries, rate limiting, privacy-safe metrics, billing plan definitions, durable usage metering, idempotency, entitlement enforcement, authenticated billing summaries, honest unconfigured checkout behavior, and protection of the operational metrics endpoint.
 
-Before launch, add fixture-based tests for multi-page and malformed PDFs, upload resource limits, owner isolation, deletion/account deletion, password reset, rate limiting, storage failures, migrations, RAG source attribution, prompt injection, urgent-language UX, keyboard/screen-reader flows, and browser-level sign-up/upload/delete journeys. Use synthetic reports only; do not commit patient data.
+Phase 9 billing tests deliberately do not pretend that payment processing is live. A real payment-provider adapter must be tested separately with provider sandbox credentials and webhook fixtures before charging customers.
 
-The current run produced `6 passed` on 2026-08-25. This is a foundation, not comprehensive clinical or production validation.
+Phase 10 observability tests verify that metrics are aggregate and that the metrics endpoint is not publicly readable without an explicitly configured collector token. Application logs intentionally record only request ID, method, route, status, and latency; they do not log report contents, filenames, tokens, or email addresses.
 
-GitHub Actions in `.github/workflows/ci.yml` repeats formatting, linting, tests, compilation, and a credential-shape scan for pushes and pull requests. Dependency/SBOM scanning should be added through the chosen repository/security platform before launch.
+Before launch, add fixture-based tests for multi-page and malformed PDFs, upload resource limits, storage failures, migrations, RAG source attribution, prompt injection, urgent-language UX, keyboard/screen-reader flows, and browser-level sign-up/upload/delete journeys. Use synthetic reports only; do not commit patient data.
+
+The repository CI workflow in `.github/workflows/ci.yml` is the authoritative repeatable quality gate for formatting, linting, tests, compilation, and credential-shaped secret scanning. Dependency/SBOM scanning and managed runtime monitoring should be enabled in the production environment.
