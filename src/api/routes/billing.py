@@ -5,7 +5,7 @@ must be configured before an upgrade URL is returned; the API never fabricates
 successful payment state.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.api.dependencies import current_user
@@ -19,14 +19,16 @@ router = APIRouter()
 
 
 @router.get("/summary", response_model=BillingResponse)
-def summary(user: User = Depends(current_user), db: Session = Depends(get_db)) -> BillingResponse:
+def summary(
+    user: User = Depends(current_user), db: Session = Depends(get_db)
+) -> BillingResponse:
     return BillingResponse(**billing_summary(db, user))
 
 
 @router.post("/checkout", response_model=CheckoutResponse)
 def checkout(user: User = Depends(current_user)) -> CheckoutResponse:
     settings = get_settings()
-    checkout_url = getattr(settings, "billing_checkout_url", None)
+    checkout_url = settings.billing_checkout_url
     if not checkout_url:
         metrics.increment("billing.checkout_unconfigured")
         return CheckoutResponse(
