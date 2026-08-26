@@ -33,9 +33,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(512))
     plan: Mapped[str] = mapped_column(String(20), default="free")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    reports: Mapped[list["Report"]] = relationship(
-        back_populates="owner", cascade="all, delete-orphan"
-    )
+    reports: Mapped[list["Report"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
+    subscriptions: Mapped[list["Subscription"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    usage_events: Mapped[list["UsageEvent"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class Report(Base):
@@ -47,16 +47,10 @@ class Report(Base):
     status: Mapped[str] = mapped_column(String(32), default="processed")
     page_count: Mapped[int] = mapped_column(Integer, default=0)
     extraction_note: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, index=True
-    )
-    deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, index=True
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     owner: Mapped[User] = relationship(back_populates="reports")
-    findings: Mapped[list["ReportFinding"]] = relationship(
-        back_populates="report", cascade="all, delete-orphan"
-    )
+    findings: Mapped[list["ReportFinding"]] = relationship(back_populates="report", cascade="all, delete-orphan")
 
 
 class ReportFinding(Base):
@@ -73,17 +67,42 @@ class ReportFinding(Base):
     report: Mapped[Report] = relationship(back_populates="findings")
 
 
+class Subscription(Base):
+    """Provider-neutral subscription state populated by a payment adapter."""
+    __tablename__ = "subscriptions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    plan: Mapped[str] = mapped_column(String(20), default="free")
+    status: Mapped[str] = mapped_column(String(32), default="none", index=True)
+    provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    external_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    external_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    current_period_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user: Mapped[User] = relationship(back_populates="subscriptions")
+
+
+class UsageEvent(Base):
+    """Durable, privacy-safe usage events used for entitlement enforcement."""
+    __tablename__ = "usage_events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    metric: Mapped[str] = mapped_column(String(64), index=True)
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    user: Mapped[User] = relationship(back_populates="usage_events")
+
+
 class AuditEvent(Base):
     """Non-PHI audit metadata only. Never place report text or filenames here."""
-
     __tablename__ = "audit_events"
     id: Mapped[int] = mapped_column(primary_key=True)
     actor_id: Mapped[int | None] = mapped_column(nullable=True, index=True)
     action: Mapped[str] = mapped_column(String(64), index=True)
     target_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, index=True
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
 
 
