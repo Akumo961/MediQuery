@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     max_pdf_pages: int = Field(default=100, ge=1, le=500)
     free_report_limit: int = Field(default=3, ge=0)
     billing_checkout_url: str | None = None
+    metrics_token: str | None = None
     telemetry_enabled: bool = True
 
     @field_validator("cors_origins", mode="before")
@@ -40,6 +41,8 @@ class Settings(BaseSettings):
                 raise RuntimeError("Production requires a managed database; SQLite is development-only")
             if any(origin.startswith("http://") for origin in self.cors_origins):
                 raise RuntimeError("Production CORS origins must use HTTPS")
+            if self.metrics_token is not None and len(self.metrics_token) < 32:
+                raise RuntimeError("METRICS_TOKEN must be at least 32 characters when configured")
 
 
 @lru_cache
