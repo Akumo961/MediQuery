@@ -17,22 +17,40 @@ def test_plan_definitions_are_explicit_and_provider_neutral() -> None:
 
 def test_usage_meter_is_idempotent_and_enforces_limit() -> None:
     db = SessionLocal()
+    email = f"meter-{uuid4().hex}@example.test"
     try:
-        user = User(email=f"meter-{uuid4().hex}@example.test", password_hash="test")
+        user = User(email=email, password_hash="test")
         db.add(user)
         db.commit()
         db.refresh(user)
         for index in range(20):
-            assert record_usage(db, user, "ai_request", idempotency_key=f"test:{user.id}:{index}")
+            assert record_usage(
+                db,
+                user,
+                "ai_request",
+                idempotency_key=f"test:{user.id}:{index}",
+            )
         db.commit()
         assert current_usage(db, user.id, "ai_request") == 20
         assert not can_consume(db, user, "ai_request")
-        assert not record_usage(db, user, "ai_request", idempotency_key=f"test:{user.id}:blocked")
-        assert not record_usage(db, user, "ai_request", idempotency_key=f"test:{user.id}:0")
+        assert not record_usage(
+            db,
+            user,
+            "ai_request",
+            idempotency_key=f"test:{user.id}:blocked",
+        )
+        assert not record_usage(
+            db,
+            user,
+            "ai_request",
+            idempotency_key=f"test:{user.id}:0",
+        )
     finally:
         db.rollback()
-        db.delete(db.scalar(select(User).where(User.email == user.email)))
-        db.commit()
+        existing = db.scalar(select(User).where(User.email == email))
+        if existing:
+            db.delete(existing)
+            db.commit()
         db.close()
 
 
