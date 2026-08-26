@@ -1,6 +1,7 @@
 from io import BytesIO
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 
@@ -40,14 +41,12 @@ def test_multi_page_synthetic_report_preserves_page_count() -> None:
 
 
 def test_synthetic_report_page_limit_is_enforced() -> None:
-    with __import__("pytest").raises(ReportValidationError, match="too many pages"):
+    with pytest.raises(ReportValidationError, match="too many pages"):
         extract_report(synthetic_pdf(page_count=3), max_pages=2)
 
 
 def test_encrypted_synthetic_report_is_rejected() -> None:
-    with __import__("pytest").raises(
-        ReportValidationError, match="Password-protected PDFs"
-    ):
+    with pytest.raises(ReportValidationError, match="Password-protected PDFs"):
         extract_report(synthetic_pdf(encrypted=True), max_pages=5)
 
 
@@ -121,9 +120,10 @@ def test_end_to_end_upload_history_delete_journey() -> None:
 
         deleted = client.delete(f"/api/reports/{report['id']}", headers=headers)
         assert deleted.status_code == 204
-        assert client.get(
-            f"/api/reports/{report['id']}", headers=headers
-        ).status_code == 404
+        assert (
+            client.get(f"/api/reports/{report['id']}", headers=headers).status_code
+            == 404
+        )
 
 
 def test_account_deletion_revokes_access_to_owned_reports() -> None:
@@ -146,9 +146,9 @@ def test_account_deletion_revokes_access_to_owned_reports() -> None:
 
         deleted = client.delete("/api/auth/account", headers=headers)
         assert deleted.status_code == 204
-        assert client.get(
-            f"/api/reports/{report_id}", headers=headers
-        ).status_code == 401
+        assert (
+            client.get(f"/api/reports/{report_id}", headers=headers).status_code == 401
+        )
 
 
 def test_unsupported_upload_format_has_a_safe_error() -> None:
