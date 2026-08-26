@@ -1,25 +1,28 @@
 """FastAPI entrypoint for the MediQuery report-organizing service."""
 
 from contextlib import asynccontextmanager
+import hmac
+import logging
 import os
 from time import perf_counter
 from uuid import uuid4
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Request
 from fastapi.responses import JSONResponse
 import uvicorn
 
-from src.api.routes import auth, reports, search
+from src.api.routes import auth, billing, reports, search
 from src.core.database import create_database
 from src.core.observability import elapsed_ms, metrics
 from src.core.rate_limit import rate_limiter
 from src.core.settings import get_settings
 
+logger = logging.getLogger("mediquery.api")
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Initialize local development persistence before serving requests."""
+    """Initialize persistence before serving requests."""
     create_database()
     yield
 
@@ -27,7 +30,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(
     title="MediQuery AI",
     description="Authenticated medical-report extraction and educational literature lookup.",
-    version="2.0.0",
+    version="2.1.0",
     lifespan=lifespan,
 )
 
@@ -38,12 +41,13 @@ app.add_middleware(
     allow_origins=settings.cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-Metrics-Token"],
 )
 
 app.include_router(search.router, prefix="/api/search", tags=["search"])
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
+app.include_router(billing.router, prefix="/api/billing", tags=["billing"])
 
 
 @app.middleware("http")
@@ -60,47 +64,58 @@ async def security_headers(request: Request, call_next):
             headers={"Retry-After": "60", "X-Request-ID": request_id},
         )
     started = perf_counter()
-    response = await call_next(request)
-    metrics.observe_ms("api.request_latency", elapsed_ms(started))
+    try:
+        response = await call_next(request)
+    except Exception:
+        metrics.increment("api.unhandled_error")
+        logger.exception("request_failed request_id=%s method=%s path=%s", request_id, request.method, request.url.path)
+        raise
+    latency = elapsed_ms(started)
+    metrics.observe_ms("api.request_latency", latency)
     metrics.increment(f"api.status.{response.status_code}")
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    response.headers[
-        "Content-Security-Policy"
-    ] = "default-src 'none'; frame-ancestors 'none'"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
     if settings.environment.lower() == "production":
-        response.headers[
-            "Strict-Transport-Security"
-        ] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    logger.info(
+        "request_complete request_id=%s method=%s path=%s status=%s latency_ms=%d",
+        request_id,
+        request.method,
+        request.url.path,
+        response.status_code,
+        int(latency),
+    )
     return response
 
 
 @app.get("/")
 async def root():
-    """Return API metadata for simple connectivity checks."""
     return {
         "message": "MediQuery API",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "endpoints": {
             "search": "/api/search",
             "authentication": "/api/auth",
             "reports": "/api/reports",
+            "billing": "/api/billing",
         },
     }
 
 
 @app.get("/health")
 async def health_check():
-    """Return a cheap health signal for Docker and smoke tests."""
     return {"status": "healthy"}
 
 
 @app.get("/health/metrics")
-async def health_metrics():
-    """Return aggregate, non-sensitive counters for an internal monitoring collector."""
+async def health_metrics(x_metrics_token: str | None = Header(default=None, alias="X-Metrics-Token")):
+    """Expose aggregate telemetry only to an explicitly configured collector."""
+    if not settings.metrics_token or not x_metrics_token or not hmac.compare_digest(x_metrics_token, settings.metrics_token):
+        raise HTTPException(status_code=404, detail="Not found")
     return {"metrics": metrics.snapshot()}
 
 
