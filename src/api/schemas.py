@@ -1,12 +1,17 @@
 """Strict API contracts for accounts, billing, and structured report processing."""
 
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 
 
 class SignUpRequest(BaseModel):
-    email: str = Field(min_length=3, max_length=320, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+    email: str = Field(
+        min_length=3,
+        max_length=320,
+        pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+    )
     password: str = Field(min_length=12, max_length=128)
     acknowledge_medical_limitations: bool = False
 
