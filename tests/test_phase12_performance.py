@@ -9,7 +9,6 @@ from src.core.database import Report
 from src.data_loader import (
     PUBMED_CACHE_SIZE,
     PUBMED_CACHE_TTL_SECONDS,
-    MedicalDataLoader,
     _fetch_pubmed_cached,
 )
 
@@ -22,27 +21,19 @@ def test_search_query_has_explicit_resource_boundaries():
         SearchQuery(query="x" * (MAX_QUERY_CHARS + 1))
 
 
-def test_pubmed_cache_reuses_identical_requests(monkeypatch, tmp_path):
+def test_pubmed_cache_reuses_identical_requests(monkeypatch):
     calls = []
 
-    def fake_fetch(self, query, max_results):
-        calls.append((query, max_results))
-        return [{"title": "Synthetic", "abstract": "Evidence"}]
+    class FakeLoader:
+        def _fetch_pubmed_papers_uncached(self, query, max_results):
+            calls.append((query, max_results))
+            return [{"title": "Synthetic", "abstract": "Evidence"}]
 
-    monkeypatch.setattr(MedicalDataLoader, "_fetch_pubmed_papers_uncached", fake_fetch)
-    monkeypatch.setattr(
-        "src.data_loader.MedicalDataLoader.__init__",
-        lambda self, data_dir="data": (
-            setattr(self, "data_dir", tmp_path),
-            setattr(self, "raw_dir", tmp_path / "raw"),
-            setattr(self, "processed_dir", tmp_path / "processed"),
-        ),
-    )
+    monkeypatch.setattr("src.data_loader.MedicalDataLoader", FakeLoader)
     _fetch_pubmed_cached.cache_clear()
     try:
-        loader = MedicalDataLoader()
-        first = loader.fetch_pubmed_papers("blood pressure", 10)
-        second = loader.fetch_pubmed_papers("blood   pressure", 10)
+        first = _fetch_pubmed_cached("blood pressure", 10, 123)
+        second = _fetch_pubmed_cached("blood pressure", 10, 123)
         assert first == second
         assert calls == [("blood pressure", 10)]
         info = _fetch_pubmed_cached.cache_info()
