@@ -14,7 +14,9 @@ class MedicalPreprocessor:
     """Preprocessing pipeline for medical text and images."""
 
     def __init__(self):
-        self.text_encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        self.text_encoder = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
         self.bio_tokenizer = AutoTokenizer.from_pretrained(
             "dmis-lab/biobert-base-cased-v1.1"
         )

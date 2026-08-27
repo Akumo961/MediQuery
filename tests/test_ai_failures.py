@@ -15,7 +15,11 @@ def test_literature_provider_failure_returns_safe_error(monkeypatch) -> None:
     with TestClient(app) as client:
         response = client.post(
             "/api/search/literature",
-            json={"query": "synthetic anemia", "max_results": 5, "search_type": "keyword"},
+            json={
+                "query": "synthetic anemia",
+                "max_results": 5,
+                "search_type": "keyword",
+            },
         )
     assert response.status_code == 502
     assert response.json()["detail"] == "Literature search is temporarily unavailable"

@@ -35,7 +35,7 @@ class EmbeddingManager:
 
         # Normalize embeddings for cosine similarity
         faiss.normalize_L2(self.embeddings)
-        self.index.add(self.embeddings.astype('float32'))
+        self.index.add(self.embeddings.astype("float32"))
 
         if save_path:
             self.save_index(save_path)
@@ -52,17 +52,19 @@ class EmbeddingManager:
         faiss.normalize_L2(query_embedding)
 
         # Search
-        scores, indices = self.index.search(query_embedding.astype('float32'), k)
+        scores, indices = self.index.search(query_embedding.astype("float32"), k)
 
         results = []
         for i, (score, idx) in enumerate(zip(scores[0], indices[0])):
             if 0 <= idx < len(self.documents):
-                results.append({
-                    "document": self.documents[idx],
-                    "score": float(score),
-                    "rank": i + 1,
-                    "index": int(idx)
-                })
+                results.append(
+                    {
+                        "document": self.documents[idx],
+                        "score": float(score),
+                        "rank": i + 1,
+                        "index": int(idx),
+                    }
+                )
 
         return results
 
@@ -70,19 +72,16 @@ class EmbeddingManager:
         """Persist FAISS index and metadata sidecar files."""
         faiss.write_index(self.index, f"{path}.index")
 
-        metadata = {
-            "documents": self.documents,
-            "embeddings": self.embeddings.tolist()
-        }
+        metadata = {"documents": self.documents, "embeddings": self.embeddings.tolist()}
 
-        with open(f"{path}.metadata", 'wb') as f:
+        with open(f"{path}.metadata", "wb") as f:
             pickle.dump(metadata, f)
 
     def load_index(self, path: str):
         """Load FAISS index and metadata sidecar files."""
         self.index = faiss.read_index(f"{path}.index")
 
-        with open(f"{path}.metadata", 'rb') as f:
+        with open(f"{path}.metadata", "rb") as f:
             metadata = pickle.load(f)
 
         self.documents = metadata["documents"]

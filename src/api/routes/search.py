@@ -76,9 +76,7 @@ async def search_literature(search_query: SearchQuery):
         results = []
         query_terms = set(search_query.query.lower().split())
         for paper in papers[: search_query.max_results]:
-            haystack = (
-                f"{paper.get('title', '')} {paper.get('abstract', '')}"
-            ).lower()
+            haystack = (f"{paper.get('title', '')} {paper.get('abstract', '')}").lower()
             overlap = sum(1 for term in query_terms if term in haystack)
             similarity = overlap / max(len(query_terms), 1)
             results.append(

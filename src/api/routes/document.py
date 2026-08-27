@@ -42,7 +42,9 @@ async def upload_document(file: UploadFile = File(...)):
             content += page.extract_text() or ""
 
         if not content.strip():
-            raise HTTPException(status_code=400, detail="Could not extract text from PDF")
+            raise HTTPException(
+                status_code=400, detail="Could not extract text from PDF"
+            )
 
         summary = text_model.summarize_text(content)
         sentences = content.split(".")
@@ -82,7 +84,9 @@ async def document_question_answering(
             content += page.extract_text() or ""
 
         if not content.strip():
-            raise HTTPException(status_code=400, detail="Could not extract text from PDF")
+            raise HTTPException(
+                status_code=400, detail="Could not extract text from PDF"
+            )
 
         result = text_model.answer_question(question, content)
         start_idx = max(0, result.get("start", 0) - 200)

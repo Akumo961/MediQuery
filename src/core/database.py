@@ -89,18 +89,12 @@ class Subscription(Base):
     plan: Mapped[str] = mapped_column(String(20), default="free")
     status: Mapped[str] = mapped_column(String(32), default="none", index=True)
     provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    external_customer_id: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    external_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     external_subscription_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True
     )
-    current_period_end: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
-    )
+    current_period_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )

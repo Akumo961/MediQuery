@@ -80,7 +80,9 @@ class MedicalModelTrainer:
         num_epochs: int = 10,
     ) -> Dict[str, Any]:
         """Train medical image classifier."""
-        train_dataset = MedicalImageDataset(train_data["image_paths"], train_data["labels"])
+        train_dataset = MedicalImageDataset(
+            train_data["image_paths"], train_data["labels"]
+        )
         val_dataset = MedicalImageDataset(val_data["image_paths"], val_data["labels"])
         train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)

@@ -59,7 +59,9 @@ def test_billing_summary_requires_authentication() -> None:
         assert client.get("/api/billing/summary").status_code == 401
 
 
-def test_billing_summary_and_checkout_are_honest_when_provider_is_unconfigured() -> None:
+def test_billing_summary_and_checkout_are_honest_when_provider_is_unconfigured() -> (
+    None
+):
     with TestClient(app) as client:
         email = f"billing-{uuid4().hex}@example.test"
         token = client.post(
