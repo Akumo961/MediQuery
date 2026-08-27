@@ -131,6 +131,7 @@ class UsageEvent(Base):
 class AuditEvent(Base):
     """Non-PHI audit metadata only. Never place report text or filenames here."""
 
+    __tablename__ = "audit_events"
     id: Mapped[int] = mapped_column(primary_key=True)
     actor_id: Mapped[int | None] = mapped_column(nullable=True, index=True)
     action: Mapped[str] = mapped_column(String(64), index=True)
