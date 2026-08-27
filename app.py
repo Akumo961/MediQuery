@@ -18,12 +18,21 @@ st.markdown(
 )
 
 
+def _http_session() -> requests.Session:
+    """Reuse one HTTP connection pool for the current Streamlit session."""
+    session = st.session_state.get("http_session")
+    if not isinstance(session, requests.Session):
+        session = requests.Session()
+        st.session_state.http_session = session
+    return session
+
+
 def api(method: str, path: str, **kwargs):
     headers = kwargs.pop("headers", {})
     token = st.session_state.get("access_token")
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    return requests.request(
+    return _http_session().request(
         method, f"{API_URL}{path}", headers=headers, timeout=30, **kwargs
     )
 
@@ -172,10 +181,11 @@ def dashboard() -> None:
     )
     if upload and st.button("Process report", type="primary"):
         with st.spinner("Validating and extracting report facts…"):
+            upload_bytes = upload.getvalue()
             response = api(
                 "POST",
                 "/api/reports",
-                files={"file": (upload.name, upload.getvalue(), "application/pdf")},
+                files={"file": (upload.name, upload_bytes, "application/pdf")},
             )
         if response.ok:
             st.success(
