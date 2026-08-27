@@ -1,12 +1,14 @@
 """MediQuery's intentionally small Streamlit client for the authenticated report workflow."""
 
 import os
+from typing import Any
 
 import requests
 import streamlit as st
 
 
-API_URL = os.getenv("MEDIQUERY_API_URL", "http://localhost:8000")
+API_URL = os.getenv("MEDIQUERY_API_URL", "http://localhost:8000").rstrip("/")
+HTTP_TIMEOUT_SECONDS = 30
 
 st.set_page_config(page_title="MediQuery", page_icon="🩺", layout="wide")
 st.markdown(
@@ -27,13 +29,19 @@ def _http_session() -> requests.Session:
     return session
 
 
-def api(method: str, path: str, **kwargs):
-    headers = kwargs.pop("headers", {})
+def api(method: str, path: str, **kwargs: Any) -> requests.Response:
+    """Call the API with the current session's bearer token and bounded timeout."""
+    headers = dict(kwargs.pop("headers", {}))
     token = st.session_state.get("access_token")
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    normalized_path = f"/{path.lstrip('/')}"
     return _http_session().request(
-        method, f"{API_URL}{path}", headers=headers, timeout=30, **kwargs
+        method,
+        f"{API_URL}{normalized_path}",
+        headers=headers,
+        timeout=HTTP_TIMEOUT_SECONDS,
+        **kwargs,
     )
 
 
@@ -52,7 +60,7 @@ def request_auth(mode: str, email: str, password: str, acknowledged: bool) -> No
             st.session_state.access_token = response.json()["access_token"]
             st.rerun()
         st.error(response.json().get("detail", "We could not complete that request."))
-    except requests.RequestException:
+    except (requests.RequestException, ValueError):
         st.error("MediQuery is unavailable. Please try again shortly.")
 
 
@@ -170,7 +178,7 @@ def dashboard() -> None:
             st.caption(
                 f"{plan['reports_used']} of {plan['reports_limit']} reports used on the Free plan"
             )
-    except requests.RequestException:
+    except (requests.RequestException, ValueError):
         st.error("We could not load your account. Please try again shortly.")
         return
 
@@ -193,15 +201,21 @@ def dashboard() -> None:
             )
             st.rerun()
         else:
-            st.error(
-                response.json().get("detail", "The report could not be processed.")
-            )
+            try:
+                detail = response.json().get("detail", "The report could not be processed.")
+            except ValueError:
+                detail = "The report could not be processed."
+            st.error(detail)
 
     response = api("GET", "/api/reports")
     if not response.ok:
         st.error("We could not load your reports.")
         return
-    reports = response.json()
+    try:
+        reports = response.json()
+    except ValueError:
+        st.error("The report service returned an invalid response.")
+        return
     if not reports:
         st.info(
             "Upload your first report to see extracted values and page-level evidence here."
