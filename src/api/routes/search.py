@@ -1,14 +1,10 @@
 """Search endpoints for medical literature discovery."""
 
-from pathlib import Path
-import sys
 from time import perf_counter
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
-
-sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from data_loader import MedicalDataLoader
 from src.core.observability import elapsed_ms, metrics
@@ -41,10 +37,8 @@ async def search_literature(search_query: SearchQuery):
     metrics.increment("rag.searches")
     try:
         papers = MedicalDataLoader().fetch_pubmed_papers(
-            search_query.query,
-            search_query.max_results,
+            search_query.query, search_query.max_results
         )
-
         if not papers:
             metrics.increment("rag.empty_results")
             return []
@@ -52,7 +46,6 @@ async def search_literature(search_query: SearchQuery):
         documents = [
             f"{paper.get('title', '')} {paper.get('abstract', '')}" for paper in papers
         ]
-
         if search_query.search_type in {"semantic", "hybrid"}:
             from models.text_models import MedicalTextModel
 
@@ -61,7 +54,6 @@ async def search_literature(search_query: SearchQuery):
                 documents,
                 top_k=search_query.max_results,
             )
-
             results = []
             for doc_info in similar_docs:
                 paper = papers[doc_info["index"]]
@@ -84,7 +76,9 @@ async def search_literature(search_query: SearchQuery):
         results = []
         query_terms = set(search_query.query.lower().split())
         for paper in papers[: search_query.max_results]:
-            haystack = f"{paper.get('title', '')} {paper.get('abstract', '')}".lower()
+            haystack = (
+                f"{paper.get('title', '')} {paper.get('abstract', '')}"
+            ).lower()
             overlap = sum(1 for term in query_terms if term in haystack)
             similarity = overlap / max(len(query_terms), 1)
             results.append(
@@ -102,7 +96,6 @@ async def search_literature(search_query: SearchQuery):
             )
         metrics.observe_ms("rag.search_latency", elapsed_ms(started))
         return results
-
     except Exception as exc:
         metrics.increment("rag.failures")
         metrics.observe_ms("rag.search_latency", elapsed_ms(started))
