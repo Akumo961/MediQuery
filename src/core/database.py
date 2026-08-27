@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text, create_engine
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, JSON, String, Text, create_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -64,6 +64,9 @@ class Report(Base):
     findings: Mapped[list["ReportFinding"]] = relationship(
         back_populates="report", cascade="all, delete-orphan"
     )
+    __table_args__ = (
+        Index("ix_reports_owner_created", "owner_id", "created_at"),
+    )
 
 
 class ReportFinding(Base):
@@ -120,8 +123,6 @@ class UsageEvent(Base):
 
 class AuditEvent(Base):
     """Non-PHI audit metadata only. Never place report text or filenames here."""
-
-    __tablename__ = "audit_events"
     id: Mapped[int] = mapped_column(primary_key=True)
     actor_id: Mapped[int | None] = mapped_column(nullable=True, index=True)
     action: Mapped[str] = mapped_column(String(64), index=True)
