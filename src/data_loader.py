@@ -1,14 +1,19 @@
 """Data ingestion helpers for external medical literature and local images."""
 
+from functools import lru_cache
 import json
 import logging
 import re
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+PUBMED_CACHE_TTL_SECONDS = 300
+PUBMED_CACHE_SIZE = 128
 
 
 class MedicalDataLoader:
@@ -22,7 +27,19 @@ class MedicalDataLoader:
         self.processed_dir.mkdir(parents=True, exist_ok=True)
 
     def fetch_pubmed_papers(self, query: str, max_results: int = 100) -> list[dict]:
-        """Fetch PubMed papers and cache the parsed response under data/raw."""
+        """Fetch PubMed papers with a bounded five-minute in-process cache."""
+        normalized_query = " ".join(query.split())
+        if not normalized_query:
+            return []
+        max_results = min(max(int(max_results), 1), 100)
+        bucket = int(time.time() // PUBMED_CACHE_TTL_SECONDS)
+        papers = _fetch_pubmed_cached(normalized_query, max_results, bucket)
+        return [dict(paper) for paper in papers]
+
+    def _fetch_pubmed_papers_uncached(
+        self, query: str, max_results: int = 100
+    ) -> list[dict]:
+        """Fetch and persist a PubMed response; failures return an empty result."""
         base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
         search_url = f"{base_url}esearch.fcgi"
         search_params = {
@@ -108,3 +125,10 @@ class MedicalDataLoader:
                     }
                 )
         return images
+
+
+@lru_cache(maxsize=PUBMED_CACHE_SIZE)
+def _fetch_pubmed_cached(query: str, max_results: int, bucket: int) -> tuple[dict, ...]:
+    """Cache PubMed responses for one bounded five-minute time bucket."""
+    loader = MedicalDataLoader()
+    return tuple(loader._fetch_pubmed_papers_uncached(query, max_results))
