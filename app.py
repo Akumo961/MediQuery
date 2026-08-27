@@ -1,6 +1,7 @@
 """MediQuery's intentionally small Streamlit client for the authenticated report workflow."""
 
 import os
+
 import requests
 import streamlit as st
 
