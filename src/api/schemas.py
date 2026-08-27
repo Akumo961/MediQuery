@@ -1,9 +1,9 @@
 """Strict API contracts for accounts, billing, and structured report processing."""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Literal
 
 
 class SignUpRequest(BaseModel):
@@ -16,8 +16,13 @@ class SignUpRequest(BaseModel):
     acknowledge_medical_limitations: bool = False
 
 
-class LoginRequest(SignUpRequest):
-    pass
+class LoginRequest(BaseModel):
+    email: str = Field(
+        min_length=3,
+        max_length=320,
+        pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+    )
+    password: str = Field(min_length=12, max_length=128)
 
 
 class AuthResponse(BaseModel):
@@ -27,6 +32,7 @@ class AuthResponse(BaseModel):
 
 class FindingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     name: str
     value: str
     unit: str | None
@@ -38,13 +44,14 @@ class FindingResponse(BaseModel):
 
 class ReportResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: str
     original_filename: str
     status: str
     page_count: int
     extraction_note: str | None
     created_at: datetime
-    findings: list[FindingResponse] = []
+    findings: list[FindingResponse] = Field(default_factory=list)
 
 
 class PlanResponse(BaseModel):
