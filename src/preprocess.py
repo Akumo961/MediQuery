@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 import cv2
 import numpy as np
 import torch
-from PIL import Image
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer
 
