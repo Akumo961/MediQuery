@@ -128,9 +128,7 @@ class MedicalDataLoader:
 
 
 @lru_cache(maxsize=PUBMED_CACHE_SIZE)
-def _fetch_pubmed_cached(
-    query: str, max_results: int, bucket: int
-) -> tuple[dict, ...]:
+def _fetch_pubmed_cached(query: str, max_results: int, bucket: int) -> tuple[dict, ...]:
     """Cache PubMed responses for one bounded five-minute time bucket."""
     loader = MedicalDataLoader()
     return tuple(loader._fetch_pubmed_papers_uncached(query, max_results))

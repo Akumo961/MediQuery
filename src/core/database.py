@@ -73,9 +73,7 @@ class Report(Base):
     findings: Mapped[list["ReportFinding"]] = relationship(
         back_populates="report", cascade="all, delete-orphan"
     )
-    __table_args__ = (
-        Index("ix_reports_owner_created", "owner_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_reports_owner_created", "owner_id", "created_at"),)
 
 
 class ReportFinding(Base):
