@@ -17,6 +17,8 @@ from src.core.database import Subscription, UsageEvent, User
 
 @dataclass(frozen=True)
 class Plan:
+    """A product plan and its server-enforced monthly entitlements."""
+
     name: str
     report_limit: int | None
     ai_request_limit: int | None
@@ -29,16 +31,22 @@ PLANS: dict[str, Plan] = {
 
 
 def _period_start() -> datetime:
+    """Return the first instant of the current UTC calendar month."""
     now = datetime.now(timezone.utc)
-    return datetime(now.year, now.month, 1)
+    return datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+
+
+def _latest_subscription(db: Session, user_id: int) -> Subscription | None:
+    """Return the newest subscription record for a user, if one exists."""
+    return db.scalar(
+        select(Subscription)
+        .where(Subscription.user_id == user_id)
+        .order_by(Subscription.created_at.desc())
+    )
 
 
 def get_plan(user: User, db: Session) -> Plan:
-    subscription = db.scalar(
-        select(Subscription)
-        .where(Subscription.user_id == user.id)
-        .order_by(Subscription.created_at.desc())
-    )
+    subscription = _latest_subscription(db, user.id)
     if subscription and subscription.status == "active" and subscription.plan in PLANS:
         return PLANS[subscription.plan]
     return PLANS.get(user.plan, PLANS["free"])
@@ -100,9 +108,10 @@ def record_usage(
 
 def billing_summary(db: Session, user: User) -> dict[str, object]:
     plan = get_plan(user, db)
+    subscription = _latest_subscription(db, user.id)
     return {
         "plan": plan.name,
-        "subscription_status": _subscription_status(db, user.id),
+        "subscription_status": subscription.status if subscription else "none",
         "reports": {
             "used": current_usage(db, user.id, "report"),
             "limit": plan.report_limit,
@@ -111,24 +120,6 @@ def billing_summary(db: Session, user: User) -> dict[str, object]:
             "used": current_usage(db, user.id, "ai_request"),
             "limit": plan.ai_request_limit,
         },
-        "billing_provider": _billing_provider(db, user.id),
+        "billing_provider": subscription.provider if subscription else None,
         "usage_period": _period_start().date().isoformat(),
     }
-
-
-def _subscription_status(db: Session, user_id: int) -> str:
-    subscription = db.scalar(
-        select(Subscription)
-        .where(Subscription.user_id == user_id)
-        .order_by(Subscription.created_at.desc())
-    )
-    return subscription.status if subscription else "none"
-
-
-def _billing_provider(db: Session, user_id: int) -> str | None:
-    subscription = db.scalar(
-        select(Subscription)
-        .where(Subscription.user_id == user_id)
-        .order_by(Subscription.created_at.desc())
-    )
-    return subscription.provider if subscription else None
