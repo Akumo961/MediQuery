@@ -202,7 +202,9 @@ def dashboard() -> None:
             st.rerun()
         else:
             try:
-                detail = response.json().get("detail", "The report could not be processed.")
+                detail = response.json().get(
+                    "detail", "The report could not be processed."
+                )
             except ValueError:
                 detail = "The report could not be processed."
             st.error(detail)
