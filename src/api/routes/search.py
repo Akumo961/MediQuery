@@ -123,7 +123,9 @@ async def search_literature(search_query: SearchQuery):
 
 
 @router.get("/suggestions")
-async def get_search_suggestions(q: str = Query(..., min_length=1, max_length=100, description="Partial query")):
+async def get_search_suggestions(
+    q: str = Query(..., min_length=1, max_length=100, description="Partial query")
+):
     """Return static medical-search suggestions filtered by a partial query."""
     suggestions = [
         "COVID-19 treatment protocols",
