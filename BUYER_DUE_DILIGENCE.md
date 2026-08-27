@@ -17,7 +17,7 @@ A six-figure valuation becomes more credible only if those assets are combined w
 | Core API | Implemented | Useful foundation |
 | Authentication/authorization | Implemented and tested | Stronger than an unauthenticated demo |
 | Report extraction | Conservative structured pipeline | Useful but not universal/clinically validated |
-| Storage/deletion | Local implementation | Production infrastructure still required |
+| Storage/deletion | Implemented locally | Production infrastructure still required |
 | RAG | Retrieval foundation | Not a production medical knowledge system |
 | Generative AI | Not enabled in protected report flow | Avoids unsupported clinical claims |
 | Billing | Entitlement/metering seam | Payment integration remains |
@@ -82,7 +82,7 @@ A buyer should treat compliance as an environmental/organizational diligence ite
 
 ## AI risks
 
-The principal AI risk is overclaiming. The current protected workflow intentionally avoids treating free-form model output as medical fact.
+The principal AI risk is overclaiming. The current protected workflow intentionally avoids treating free-form generative output as medical fact.
 
 Future generative/RAG features introduce risks including hallucination, unsupported diagnosis, prompt injection through documents, retrieval poisoning, incorrect citations, stale knowledge, and unsafe urgent-situation messaging.
 
