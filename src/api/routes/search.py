@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from data_loader import MedicalDataLoader
 from src.core.observability import elapsed_ms, metrics
+from src.data_loader import MedicalDataLoader
 
 router = APIRouter()
 
