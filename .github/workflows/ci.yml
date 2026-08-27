@@ -35,7 +35,19 @@ jobs:
           git push
       - run: python -m black --check src tests app.py
       - run: python -m flake8 src tests app.py --max-line-length=120
-      - run: python -m pytest -q
+      - name: Run tests
+        run: |
+          set -o pipefail
+          python -m pytest -q 2>&1 | tee .ci-pytest-output.txt
+      - name: Commit pytest diagnostic on failure
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+        run: |
+          if [ ! -f .ci-pytest-output.txt ]; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ci-pytest-output.txt
+          git commit -m "ci: capture pytest diagnostic"
+          git push
       - run: python -m compileall -q src app.py
       - name: Scan for common credential shapes
         run: |
