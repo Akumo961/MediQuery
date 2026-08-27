@@ -1,5 +1,6 @@
 """Search endpoints for medical literature discovery."""
 
+from functools import lru_cache
 from time import perf_counter
 from typing import Any, Dict, List
 
@@ -11,11 +12,13 @@ from src.data_loader import MedicalDataLoader
 
 router = APIRouter()
 
+MAX_QUERY_CHARS = 300
+
 
 class SearchQuery(BaseModel):
     """Request body for literature search."""
 
-    query: str = Field(..., min_length=1)
+    query: str = Field(..., min_length=1, max_length=MAX_QUERY_CHARS)
     max_results: int = Field(10, ge=1, le=50)
     search_type: str = Field("semantic", pattern="^(semantic|keyword|hybrid)$")
 
@@ -30,33 +33,49 @@ class SearchResult(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
+@lru_cache(maxsize=1)
+def _get_loader() -> MedicalDataLoader:
+    """Reuse the lightweight loader instead of constructing filesystem state per request."""
+    return MedicalDataLoader()
+
+
+@lru_cache(maxsize=1)
+def _get_text_model():
+    """Load the semantic model once per worker rather than once per request."""
+    from models.text_models import MedicalTextModel
+
+    return MedicalTextModel()
+
+
 @router.post("/literature", response_model=List[SearchResult])
 async def search_literature(search_query: SearchQuery):
     """Search PubMed and rank papers by semantic or keyword relevance."""
     started = perf_counter()
     metrics.increment("rag.searches")
     try:
-        papers = MedicalDataLoader().fetch_pubmed_papers(
+        papers = _get_loader().fetch_pubmed_papers(
             search_query.query, search_query.max_results
         )
         if not papers:
             metrics.increment("rag.empty_results")
+            metrics.observe_ms("rag.search_latency", elapsed_ms(started))
             return []
 
         documents = [
             f"{paper.get('title', '')} {paper.get('abstract', '')}" for paper in papers
         ]
         if search_query.search_type in {"semantic", "hybrid"}:
-            from models.text_models import MedicalTextModel
-
-            similar_docs = MedicalTextModel().find_similar_documents(
+            similar_docs = _get_text_model().find_similar_documents(
                 search_query.query,
                 documents,
                 top_k=search_query.max_results,
             )
             results = []
             for doc_info in similar_docs:
-                paper = papers[doc_info["index"]]
+                paper_index = doc_info.get("index", -1)
+                if not 0 <= paper_index < len(papers):
+                    continue
+                paper = papers[paper_index]
                 results.append(
                     SearchResult(
                         title=paper.get("title", "Unknown Title"),
@@ -104,7 +123,7 @@ async def search_literature(search_query: SearchQuery):
 
 
 @router.get("/suggestions")
-async def get_search_suggestions(q: str = Query(..., description="Partial query")):
+async def get_search_suggestions(q: str = Query(..., min_length=1, max_length=100, description="Partial query")):
     """Return static medical-search suggestions filtered by a partial query."""
     suggestions = [
         "COVID-19 treatment protocols",
