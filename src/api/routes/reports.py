@@ -1,5 +1,6 @@
 """Authenticated, owner-scoped report lifecycle endpoints."""
 
+import asyncio
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
@@ -38,6 +39,11 @@ def _get_owned_report(report_id: str, user: User, db: Session) -> Report:
     return report
 
 
+def _store_report_bytes(target: Path, raw: bytes) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(raw)
+
+
 @router.post("", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 async def upload_report(
     file: UploadFile = File(...),
@@ -56,7 +62,9 @@ async def upload_report(
     raw = await file.read(settings.max_report_bytes + 1)
     try:
         validate_pdf(file.filename, file.content_type, raw, settings.max_report_bytes)
-        extraction = extract_report(raw, settings.max_pdf_pages)
+        extraction = await asyncio.to_thread(
+            extract_report, raw, settings.max_pdf_pages
+        )
     except ReportValidationError as exc:
         metrics.increment("reports.upload_failed")
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -66,8 +74,7 @@ async def upload_report(
     report_id = str(uuid4())
     storage_key = f"{user.id}/{report_id}.pdf"
     target = settings.upload_root / storage_key
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(raw)
+    await asyncio.to_thread(_store_report_bytes, target, raw)
     report = Report(
         id=report_id,
         owner_id=user.id,
