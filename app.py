@@ -107,15 +107,18 @@ def signed_out_view() -> None:
     st.markdown("### Frequently asked questions")
     with st.expander("Can MediQuery diagnose me?"):
         st.write(
-            "No. It is an educational report-organizing tool. Consult a qualified health professional for medical decisions."
+            "No. It is an educational report-organizing tool. Consult a qualified "
+            "health professional for medical decisions."
         )
     with st.expander("What reports can I upload?"):
         st.write(
-            "Text-based PDF reports up to the configured limit. Scanned PDFs may not contain selectable text and OCR is not enabled yet."
+            "Text-based PDF reports up to the configured limit. Scanned PDFs may not "
+            "contain selectable text and OCR is not enabled yet."
         )
     with st.expander("How do I delete my information?"):
         st.write(
-            "You can delete each report in the dashboard. Account deletion is available through the authenticated API; a self-service UI control is planned."
+            "You can delete each report in the dashboard. Account deletion is "
+            "available through the authenticated API; a self-service UI control is planned."
         )
     st.caption(
         "Privacy note: Reports are sensitive. Do not upload a report unless you are "
