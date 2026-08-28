@@ -4,19 +4,28 @@ from dataclasses import dataclass
 from io import BytesIO
 import re
 from pathlib import Path
+
 from pypdf import PdfReader
 
 
 PDF_MAGIC = b"%PDF-"
 MAX_EVIDENCE_CHARS = 500
+
+# Keep the value/unit grammar deliberately conservative. In particular, the unit
+# must start with a letter so a reference range such as ``12.0 - 16.0`` cannot
+# be swallowed as a unit.
 LAB_PATTERN = re.compile(
-    r"(?P<name>[A-Za-z][A-Za-z0-9 /()'\-]{1,80}?)\s*[:\t]+\s*"
+    r"^(?P<name>[A-Za-z][A-Za-z0-9 /()'\-]{1,80}?)\s*[:\t]+\s*"
     r"(?P<value>[<>]?\s*\d+(?:\.\d+)?)\s*"
-    r"(?P<unit>[A-Za-zµμ/%^0-9.\-/]+)?\s*"
+    r"(?P<unit>[A-Za-zµμ][A-Za-zµμ0-9/%^.\-]*)?\s*"
     r"(?:\(?\s*(?P<range>\d+(?:\.\d+)?\s*(?:-|–|to)\s*\d+(?:\.\d+)?|[<>]\s*\d+(?:\.\d+)?)\s*\)?)?\s*"
-    r"(?P<flag>H|L|High|Low|Normal)?\b",
+    r"(?P<flag>H|L|High|Low|Normal)?\s*$",
     re.IGNORECASE,
 )
+REFERENCE_RANGE_PATTERN = re.compile(
+    r"^Reference Range\s*:\s*(?P<range>.+?)\s*$", re.IGNORECASE
+)
+FLAG_PATTERN = re.compile(r"^Flag\s*:\s*(?P<flag>high|low|normal|h|l)\s*$", re.IGNORECASE)
 
 
 class ReportValidationError(ValueError):
@@ -89,36 +98,72 @@ def extract_report(raw: bytes, max_pages: int) -> ExtractionResult:
     return ExtractionResult(page_count=len(reader.pages), findings=findings, note=note)
 
 
+def _normalize_flag(raw_flag: str | None) -> str:
+    return {
+        "h": "high",
+        "high": "high",
+        "l": "low",
+        "low": "low",
+        "normal": "normal",
+    }.get((raw_flag or "").lower(), "unknown")
+
+
+def _parse_reference_range(value: str) -> str | None:
+    normalized = " ".join(value.split())
+    return normalized or None
+
+
 def parse_findings(text: str, page: int) -> list[ExtractedFinding]:
-    """Extract conservative lab candidates; never infer a clinical result from missing fields."""
+    """Extract conservative lab candidates without treating reference/flag lines as labs."""
     findings: list[ExtractedFinding] = []
     seen: set[tuple[str, str, str | None]] = set()
-    for line in text.splitlines():
-        normalized = " ".join(line.split())
+    lines = [" ".join(line.split()) for line in text.splitlines()]
+
+    for index, normalized in enumerate(lines):
         if len(normalized) < 4 or len(normalized) > MAX_EVIDENCE_CHARS:
             continue
-        match = LAB_PATTERN.search(normalized)
+        match = LAB_PATTERN.match(normalized)
         if not match:
             continue
+
         name = match.group("name").strip(" :-")
         value = re.sub(r"\s+", "", match.group("value"))
         unit = (match.group("unit") or "").strip() or None
         reference_range = (match.group("range") or "").strip() or None
-        if len(name) < 2 or name.lower() in {"page", "date", "patient", "result"}:
+        raw_flag = match.group("flag")
+
+        if len(name) < 2 or name.lower() in {"page", "date", "patient", "result", "reference range", "flag"}:
             continue
+
+        # Some PDFs place the range and flag on their own lines immediately
+        # after the value. Associate only those explicit adjacent metadata lines.
+        evidence_lines = [normalized]
+        for following in lines[index + 1 : index + 3]:
+            range_match = REFERENCE_RANGE_PATTERN.match(following)
+            if range_match and reference_range is None:
+                reference_range = _parse_reference_range(range_match.group("range"))
+                evidence_lines.append(following)
+                continue
+            flag_match = FLAG_PATTERN.match(following)
+            if flag_match and raw_flag is None:
+                raw_flag = flag_match.group("flag")
+                evidence_lines.append(following)
+                continue
+            break
+
         key = (name.lower(), value, unit)
         if key in seen:
             continue
         seen.add(key)
-        raw_flag = (match.group("flag") or "").lower()
-        flag = {
-            "h": "high",
-            "high": "high",
-            "l": "low",
-            "low": "low",
-            "normal": "normal",
-        }.get(raw_flag, "unknown")
         findings.append(
-            ExtractedFinding(name, value, unit, reference_range, flag, page, normalized)
+            ExtractedFinding(
+                name=name,
+                value=value,
+                unit=unit,
+                reference_range=reference_range,
+                flag=_normalize_flag(raw_flag),
+                page=page,
+                evidence=" · ".join(evidence_lines)[:MAX_EVIDENCE_CHARS],
+            )
         )
     return findings[:200]
