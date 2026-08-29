@@ -150,8 +150,8 @@ A buyer should assume that core technical concepts are reproducible and should s
 
 Material remaining risks include:
 
-- No verified customer traction, revenue, or retention.
-- No clinical validation or regulatory assessment.
+- **No verified customer traction.** No customers, revenue, or retention are claimed or verified.
+- **No clinical validation.** No clinical validation or regulatory assessment has been completed.
 - Production infrastructure and operational evidence are incomplete.
 - No live payment-provider integration.
 - OCR and broad document-layout coverage remain incomplete.
