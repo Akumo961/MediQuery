@@ -8,6 +8,8 @@ The acquisition value is **not** a claim of clinical capability, regulatory appr
 
 **Current status:** production-shaped engineering foundation; **not approved for real patient/PHI processing**.
 
+**Medical boundary:** MediQuery is **not a diagnostic service**, emergency service, doctor replacement, or clinically validated medical device. Extracted information must be checked against the original report and any medical interpretation must be performed by an appropriately qualified healthcare professional.
+
 ## 2. Implemented vs. potential
 
 ### Implemented
