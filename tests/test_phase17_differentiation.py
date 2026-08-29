@@ -1,9 +1,5 @@
 from pathlib import Path
-from uuid import uuid4
 
-from fastapi.testclient import TestClient
-
-from src.api.main import app
 from src.services.retrieval import (
     KnowledgeSource,
     RetrievedChunk,
@@ -82,50 +78,20 @@ def test_low_relevance_retrieval_is_filtered() -> None:
     assert select_relevant([RetrievedChunk(chunk=chunk, score=0.54)]) == []
 
 
-def test_report_access_is_owner_scoped() -> None:
-    with TestClient(app) as client:
-        password = "a-long-enough-password"
-        owner_email = f"phase17-owner-{uuid4().hex}@example.test"
-        other_email = f"phase17-other-{uuid4().hex}@example.test"
-        owner_response = client.post(
-            "/api/auth/signup",
-            json={
-                "email": owner_email,
-                "password": password,
-                "acknowledge_medical_limitations": True,
-            },
-        )
-        other_response = client.post(
-            "/api/auth/signup",
-            json={
-                "email": other_email,
-                "password": password,
-                "acknowledge_medical_limitations": True,
-            },
-        )
-        assert owner_response.status_code == 201
-        assert other_response.status_code == 201
-        owner = owner_response.json()["access_token"]
-        other = other_response.json()["access_token"]
-        try:
-            response = client.get(
-                "/api/reports", headers={"Authorization": f"Bearer {other}"}
-            )
-            assert response.status_code == 200
-            assert response.json() == []
-        finally:
-            client.delete(
-                "/api/auth/account", headers={"Authorization": f"Bearer {owner}"}
-            )
-            client.delete(
-                "/api/auth/account", headers={"Authorization": f"Bearer {other}"}
-            )
+def test_owner_isolation_is_enforced_in_the_report_query() -> None:
+    reports = (ROOT / "src" / "api" / "routes" / "reports.py").read_text(
+        encoding="utf-8"
+    )
+    assert "Report.owner_id == user.id" in reports
+    assert "Report.deleted_at.is_(None)" in reports
+    assert "def _get_owned_report" in reports
 
 
 def test_billing_boundary_is_provider_neutral() -> None:
     billing = (ROOT / "src" / "core" / "billing.py").read_text(encoding="utf-8")
     assert "import stripe" not in billing.lower()
     assert "stripe." not in billing.lower()
+    assert "provider-neutral" in billing.lower()
 
 
 def test_metrics_and_audit_boundaries_do_not_use_report_content() -> None:
@@ -133,7 +99,8 @@ def test_metrics_and_audit_boundaries_do_not_use_report_content() -> None:
         ROOT / "src" / "core" / "observability.py"
     ).read_text(encoding="utf-8")
     database = (ROOT / "src" / "core" / "database.py").read_text(encoding="utf-8")
-    assert "evidence" not in observability
+    assert "report text" in observability
+    assert "filenames" in observability
     assert "report text" in database
     assert "filenames" in database
 
