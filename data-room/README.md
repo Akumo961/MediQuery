@@ -52,8 +52,9 @@ This data room distinguishes repository evidence from items that must be supplie
 
 - [`../ACQUISITION.md`](../ACQUISITION.md) — current acquisition scope and limitations
 - [`../BUYER_DUE_DILIGENCE.md`](../BUYER_DUE_DILIGENCE.md) — diligence questions and blockers
+- [`IP_AND_LICENSE_AUDIT.md`](IP_AND_LICENSE_AUDIT.md) — repository-level IP, chain-of-title, dependency, model/data, and licensing audit
 
-**External evidence required before closing:** contributor/IP ownership records, dependency/model/data licence inventory, trademark review, generated/copied-code review, and legal/privacy/regulatory opinions where applicable.
+**External evidence required before closing:** contributor/IP ownership records, dependency/model/data licence inventory, SBOM for the exact release artifact, trademark review, generated/copied-code review, and legal/privacy/regulatory opinions where applicable.
 
 ## 7. Release identity
 
