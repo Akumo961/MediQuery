@@ -21,10 +21,14 @@ class ProductionRequirements:
     def validate(self) -> None:
         """Reject an incomplete production contract instead of silently downgrading."""
         if self.database_url.startswith("sqlite"):
-            raise ValueError("Production requires managed PostgreSQL or an equivalent managed database")
+            raise ValueError(
+                "Production requires managed PostgreSQL or an equivalent managed database"
+            )
         if len(self.jwt_secret) < 32:
             raise ValueError("Production JWT secret must contain at least 32 characters")
-        if not self.cors_origins or any(not origin.startswith("https://") for origin in self.cors_origins):
+        if not self.cors_origins or any(
+            not origin.startswith("https://") for origin in self.cors_origins
+        ):
             raise ValueError("Production CORS origins must use HTTPS")
         missing = [
             name
