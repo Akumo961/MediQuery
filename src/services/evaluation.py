@@ -26,7 +26,9 @@ def evaluate_findings(
     actual_set = {_key(item) for item in actual}
     expected_set = {_key(item) for item in expected}
     matched = len(actual_set & expected_set)
-    precision = matched / len(actual_set) if actual_set else 1.0 if not expected_set else 0.0
+    precision = (
+        matched / len(actual_set) if actual_set else 1.0 if not expected_set else 0.0
+    )
     recall = matched / len(expected_set) if expected_set else 1.0
     return EvaluationResult(
         expected=len(expected_set),
@@ -36,7 +38,9 @@ def evaluate_findings(
     )
 
 
-def retrieval_grounding_coverage(source_ids: Iterable[str], cited_ids: Iterable[str]) -> float:
+def retrieval_grounding_coverage(
+    source_ids: Iterable[str], cited_ids: Iterable[str]
+) -> float:
     """Measure citation coverage for retrieved source identifiers."""
     sources = {value for value in source_ids if value}
     cited = {value for value in cited_ids if value}
