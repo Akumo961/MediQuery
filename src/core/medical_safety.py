@@ -29,9 +29,18 @@ UNSAFE_PATTERNS = (
 )
 
 URGENT_PATTERNS = (
-    re.compile(r"\b(?:chest pain|difficulty breathing|trouble breathing)\b", re.IGNORECASE),
-    re.compile(r"\b(?:severe bleeding|uncontrolled bleeding)\b", re.IGNORECASE),
-    re.compile(r"\b(?:fainting|loss of consciousness|unconscious)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(?:chest pain|difficulty breathing|trouble breathing)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:severe bleeding|uncontrolled bleeding)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:fainting|loss of consciousness|unconscious)\b",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(?:stroke symptoms?|seizure)\b", re.IGNORECASE),
     re.compile(r"\b(?:suicidal|suicide|self-harm)\b", re.IGNORECASE),
 )
