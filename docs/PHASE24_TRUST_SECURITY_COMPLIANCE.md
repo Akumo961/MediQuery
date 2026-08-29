@@ -13,7 +13,7 @@ Phase 24 packages the evidence and control model needed for independent security
 - Clinical review is required before any feature makes clinical claims.
 - IP review covers contributors, dependencies, models, datasets, medical content, and historical artifacts.
 - Incident response, backup/restore, and deployment evidence are identified and reviewable.
-- Compliance language remains evidence-based: readiness controls are not certifications.
+- Compliance language remains evidence-based: readiness controls are not certifications; Phase 24 is not a certification.
 
 ## Control matrix
 
