@@ -25,7 +25,9 @@ class ProductionRequirements:
                 "Production requires managed PostgreSQL or an equivalent managed database"
             )
         if len(self.jwt_secret) < 32:
-            raise ValueError("Production JWT secret must contain at least 32 characters")
+            raise ValueError(
+                "Production JWT secret must contain at least 32 characters"
+            )
         if not self.cors_origins or any(
             not origin.startswith("https://") for origin in self.cors_origins
         ):
