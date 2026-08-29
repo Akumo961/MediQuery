@@ -57,12 +57,12 @@ This data room distinguishes repository evidence from items that must be supplie
 
 ## 7. Release identity
 
-The acquisition candidate is pinned to:
+The acquisition candidate is pinned to the current release branch tip:
 
 - **Branch:** `release/v1.0.0`
-- **Commit:** `e66591586f1867469fe2ea8d81438a411a776ae3`
+- **Commit:** `09b675e00591ffc92f74d2d19999b912c83b5916`
 
-The release branch is the reference point for this data room. Any later engineering work must be treated as a new revision and must not silently change the acquisition candidate.
+This commit adds only the buyer data-room index; application source code is unchanged. Any later engineering work must be treated as a new revision and must not silently change the acquisition candidate.
 
 ## 8. Evidence rules
 
