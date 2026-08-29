@@ -120,9 +120,11 @@ The repository currently has no general open-source licence grant. A buyer must 
 
 ## Business risks
 
-**No verified customer traction.** No users, revenue, partnerships, retention, or market validation are claimed. A technically strong foundation can still have zero commercial value if customers do not want the workflow or acquisition costs are uneconomic.
+**No verified customer traction.** There is no verified customer traction, and no users, revenue, partnerships, retention, or market validation are claimed. A technically strong foundation can still have zero commercial value if customers do not want the workflow or acquisition costs are uneconomic.
 
-**Response:** validate willingness to pay and retention before treating the codebase as a six-figure asset.
+**No clinical validation.** There is no clinical validation or regulatory assessment. The repository must not be presented as evidence of clinical accuracy, clinical usefulness, or regulatory readiness.
+
+**Response:** validate willingness to pay, retention, and intended-use claims before treating the codebase as a six-figure asset.
 
 ## Competitive risks
 
