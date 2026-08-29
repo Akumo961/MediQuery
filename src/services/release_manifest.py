@@ -24,7 +24,9 @@ class ReleaseManifest:
         if "not a diagnostic service" not in self.medical_safety_boundary.lower():
             raise ValueError("Medical safety boundary must remain explicit")
         if not self.external_diligence_required:
-            raise ValueError("External diligence cannot be represented as complete by code alone")
+            raise ValueError(
+                "External diligence cannot be represented as complete by code alone"
+            )
 
 
 def release_is_candidate(manifest: ReleaseManifest) -> bool:
