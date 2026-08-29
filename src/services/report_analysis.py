@@ -25,7 +25,9 @@ LAB_PATTERN = re.compile(
 REFERENCE_RANGE_PATTERN = re.compile(
     r"^Reference Range\s*:\s*(?P<range>.+?)\s*$", re.IGNORECASE
 )
-FLAG_PATTERN = re.compile(r"^Flag\s*:\s*(?P<flag>high|low|normal|h|l)\s*$", re.IGNORECASE)
+FLAG_PATTERN = re.compile(
+    r"^Flag\s*:\s*(?P<flag>high|low|normal|h|l)\s*$", re.IGNORECASE
+)
 
 
 class ReportValidationError(ValueError):
@@ -92,9 +94,15 @@ def extract_report(raw: bytes, max_pages: int) -> ExtractionResult:
 
     note = None
     if not extracted_any_text:
-        note = "No selectable text was found. This may be a scanned report; OCR is not yet enabled."
+        note = (
+            "No selectable text was found. This may be a scanned report; "
+            "OCR is not yet enabled."
+        )
     elif not findings:
-        note = "Text was extracted, but no lab-value candidates could be safely identified. Review the original report."
+        note = (
+            "Text was extracted, but no lab-value candidates could be safely "
+            "identified. Review the original report."
+        )
     return ExtractionResult(page_count=len(reader.pages), findings=findings, note=note)
 
 
@@ -132,7 +140,14 @@ def parse_findings(text: str, page: int) -> list[ExtractedFinding]:
         reference_range = (match.group("range") or "").strip() or None
         raw_flag = match.group("flag")
 
-        if len(name) < 2 or name.lower() in {"page", "date", "patient", "result", "reference range", "flag"}:
+        if len(name) < 2 or name.lower() in {
+            "page",
+            "date",
+            "patient",
+            "result",
+            "reference range",
+            "flag",
+        }:
             continue
 
         # Some PDFs place the range and flag on their own lines immediately
