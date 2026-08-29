@@ -53,9 +53,11 @@ def test_production_rejects_short_metrics_token() -> None:
 
 
 def test_phase19_document_contains_release_boundary() -> None:
-    document = (ROOT / "docs" / "PHASE19_PRODUCTION_READINESS.md").read_text(
-        encoding="utf-8"
-    ).lower()
+    document = (
+        (ROOT / "docs" / "PHASE19_PRODUCTION_READINESS.md")
+        .read_text(encoding="utf-8")
+        .lower()
+    )
     for marker in (
         "phase 19",
         "production readiness",
