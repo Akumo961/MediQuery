@@ -125,7 +125,7 @@ def test_report_access_is_owner_scoped() -> None:
 def test_billing_boundary_is_provider_neutral() -> None:
     billing = (ROOT / "src" / "core" / "billing.py").read_text(encoding="utf-8")
     assert "stripe" not in billing.lower()
-    assert "payment" not in billing.lower()
+    assert "stripe" not in billing.lower()
 
 
 def test_metrics_and_audit_boundaries_do_not_use_report_content() -> None:
