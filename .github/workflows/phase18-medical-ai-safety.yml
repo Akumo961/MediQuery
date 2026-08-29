@@ -1,0 +1,49 @@
+name: phase18-medical-ai-safety
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  medical-ai-safety-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Phase 18 integrity gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          required = [
+              Path("docs/PHASE18_MEDICAL_AI_SAFETY.md"),
+              Path("src/core/medical_safety.py"),
+              Path("tests/test_medical_safety.py"),
+              Path("src/services/retrieval.py"),
+              Path("AI_SAFETY.md"),
+          ]
+          for path in required:
+              assert path.is_file() and path.stat().st_size > 0, path
+          document = Path("docs/PHASE18_MEDICAL_AI_SAFETY.md").read_text(encoding="utf-8")
+          for marker in (
+              "Phase 18",
+              "diagnostic assertion",
+              "Fixed emergency handoff",
+              "Acceptance criteria",
+          ):
+              assert marker in document, marker
+          print("Phase 18 integrity gate: PASS")
+          PY
+      - name: Medical safety tests
+        run: python -m pytest -q tests/test_medical_safety.py tests/test_ai_failures.py tests/test_retrieval.py
+      - name: Compile safety boundary
+        run: python -m compileall -q src/core/medical_safety.py src/services/retrieval.py
