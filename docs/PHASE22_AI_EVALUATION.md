@@ -8,7 +8,7 @@ Phase 22 establishes a measurable evaluation layer for extraction and retrieval 
 
 - A versioned synthetic benchmark covers representative supported report layouts.
 - Finding evaluation reports deterministic precision and recall.
-- Retrieval evaluation measures source/citation coverage and relevance thresholds.
+- Retrieval evaluation measures source/citation provenance coverage and relevance thresholds.
 - Every knowledge source retains identity, publisher, URL, version, and licence metadata.
 - Retrieved document text remains untrusted data and cannot become instructions.
 - Prompt-injection, unsupported-claim, and insufficient-evidence cases are tested.
