@@ -46,11 +46,11 @@ The buyer demonstration must use synthetic reports only. The demonstrable workfl
 
 ## Commercial truthfulness boundary
 
-Phase 20 does **not claim** that MediQuery has customers, revenue, clinical validation, regulatory approval, patents, exclusive intellectual property, production medical-data authorization, or a guaranteed acquisition price.
+Phase 20 **does not claim** customers, revenue, clinical validation, regulatory approval, patents, exclusive intellectual property, production medical-data authorization, or a guaranteed acquisition price.
 
 The repository explicitly records **no verified customer traction** and **no clinical validation**. Those are evidence gaps, not claims that can be inferred from the existence of source code, tests, documentation, or synthetic demonstrations.
 
-Phase 20 does **not claim**:
+For avoidance of doubt, Phase 20 **does not claim**:
 
 - paying customers;
 - revenue or retention;
