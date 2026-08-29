@@ -12,12 +12,24 @@ class ComplianceControl:
 
 
 CONTROLS = (
-    ComplianceControl("PRIV-01", "privacy", "data map and retention policy", "privacy/legal"),
-    ComplianceControl("SEC-01", "security", "independent assessment and remediation record", "security"),
-    ComplianceControl("AI-01", "medical AI safety", "evaluation set, safety tests, and review record", "AI/clinical"),
-    ComplianceControl("IP-01", "intellectual property", "contributor and dependency licence inventory", "legal"),
-    ComplianceControl("OPS-01", "operations", "backup/restore and incident-response evidence", "operations"),
-    ComplianceControl("PROD-01", "production", "deployment configuration and environment evidence", "engineering"),
+    ComplianceControl(
+        "PRIV-01", "privacy", "data map and retention policy", "privacy/legal"
+    ),
+    ComplianceControl(
+        "SEC-01", "security", "independent assessment and remediation record", "security"
+    ),
+    ComplianceControl(
+        "AI-01", "medical AI safety", "evaluation set, safety tests, and review record", "AI/clinical"
+    ),
+    ComplianceControl(
+        "IP-01", "intellectual property", "contributor and dependency licence inventory", "legal"
+    ),
+    ComplianceControl(
+        "OPS-01", "operations", "backup/restore and incident-response evidence", "operations"
+    ),
+    ComplianceControl(
+        "PROD-01", "production", "deployment configuration and environment evidence", "engineering"
+    ),
 )
 
 
@@ -28,6 +40,12 @@ def required_control_ids() -> tuple[str, ...]:
 
 def validate_evidence_map(evidence: dict[str, str]) -> None:
     """Require evidence references without claiming that evidence itself is certification."""
-    missing = [control.control_id for control in CONTROLS if not evidence.get(control.control_id, "").strip()]
+    missing = [
+        control.control_id
+        for control in CONTROLS
+        if not evidence.get(control.control_id, "").strip()
+    ]
     if missing:
-        raise ValueError("Compliance-readiness evidence missing: " + ", ".join(missing))
+        raise ValueError(
+            "Compliance-readiness evidence missing: " + ", ".join(missing)
+        )
