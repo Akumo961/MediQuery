@@ -1,0 +1,40 @@
+name: final-program-21-25
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  final-program-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Final program integrity gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for number, path in (
+              (21, "docs/PHASE21_PRODUCTION_INFRASTRUCTURE.md"),
+              (22, "docs/PHASE22_AI_EVALUATION.md"),
+              (23, "docs/PHASE23_COMMERCIAL_PRODUCT.md"),
+              (24, "docs/PHASE24_TRUST_SECURITY_COMPLIANCE.md"),
+              (25, "docs/PHASE25_FINAL_SALE_READINESS.md"),
+          ):
+              document = Path(path)
+              assert document.is_file() and document.stat().st_size > 0, path
+              assert f"phase {number}" in document.read_text(encoding="utf-8").lower(), number
+          PY
+      - name: Final program tests
+        run: python -m pytest -q tests/test_phase21_25_program.py
+      - name: Compile final program contracts
+        run: python -m compileall -q src/core/production_readiness.py src/core/compliance.py src/frontend/accessibility.py src/services/evaluation.py src/services/release_manifest.py
