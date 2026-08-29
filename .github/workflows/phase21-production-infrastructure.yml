@@ -1,0 +1,35 @@
+name: phase21-production-infrastructure
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-infrastructure-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Phase 21 integrity gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("docs/PHASE21_PRODUCTION_INFRASTRUCTURE.md")
+          assert path.is_file() and path.stat().st_size > 0
+          text = path.read_text(encoding="utf-8").lower()
+          for marker in ("phase 21", "managed postgres", "tls/waf", "malware scanning", "fail closed"):
+              assert marker in text, marker
+          PY
+      - name: Phase 21 acceptance tests
+        run: python -m pytest -q tests/test_phase21_25_program.py -k phase21
+      - name: Compile production contract
+        run: python -m compileall -q src/core/production_readiness.py
