@@ -19,8 +19,29 @@ jobs:
           python-version: "3.11"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements-ci.txt
-      - name: Phase 17 tests
-        run: python -m pytest -q tests/test_phase17_differentiation.py
+      - name: Phase 17 integrity gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          required = [
+              Path("docs/DEMONSTRABLE_DIFFERENTIATION.md"),
+              Path("src/services/report_analysis.py"),
+              Path("src/services/retrieval.py"),
+              Path("src/api/routes/reports.py"),
+              Path("src/core/billing.py"),
+              Path("src/core/observability.py"),
+              Path("src/api/main.py"),
+          ]
+          for path in required:
+              assert path.is_file() and path.stat().st_size > 0, path
+          document = Path("docs/DEMONSTRABLE_DIFFERENTIATION.md").read_text(encoding="utf-8")
+          for marker in ("Phase 17", "Buyer demonstration script", "What is deliberately not claimed"):
+              assert marker in document, marker
+          print("Phase 17 integrity gate: PASS")
+          PY
+      - name: Existing extraction and retrieval tests
+        run: python -m pytest -q tests/test_report_analysis.py tests/test_retrieval.py
       - name: Formatting gate
         run: python -m black --check src tests app.py
       - name: Lint gate
