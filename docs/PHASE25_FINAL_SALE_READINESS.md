@@ -7,7 +7,7 @@ Phase 25 is the final repository-level release gate for presenting MediQuery to 
 ## Acceptance criteria
 
 - Phases 17 through 24 have passing repository gates.
-- The exact release commit is recorded and reproducible.
+- The exact release commit is recorded and reproducible. The exact commit presented to a buyer must match the tested revision.
 - A buyer data room index identifies architecture, security, AI safety, deployment, testing, IP, and diligence materials.
 - Synthetic-only buyer demonstration steps are documented.
 - Release quality requires formatting, linting, tests, compilation, and credential-pattern scanning.
