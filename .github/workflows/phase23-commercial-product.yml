@@ -1,0 +1,35 @@
+name: phase23-commercial-product
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  commercial-product-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Phase 23 integrity gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("docs/PHASE23_COMMERCIAL_PRODUCT.md")
+          assert path.is_file() and path.stat().st_size > 0
+          text = path.read_text(encoding="utf-8").lower()
+          for marker in ("phase 23", "accessibility", "keyboard", "responsive", "accessible name"):
+              assert marker in text, marker
+          PY
+      - name: Phase 23 acceptance tests
+        run: python -m pytest -q tests/test_phase21_25_program.py -k phase23
+      - name: Compile accessibility contract
+        run: python -m compileall -q src/frontend/accessibility.py
