@@ -1,0 +1,35 @@
+name: phase25-final-sale-readiness
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  final-sale-readiness-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-ci.txt
+      - name: Phase 25 integrity gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("docs/PHASE25_FINAL_SALE_READINESS.md")
+          assert path.is_file() and path.stat().st_size > 0
+          text = path.read_text(encoding="utf-8").lower()
+          for marker in ("phase 25", "buyer data room", "release manifest", "exact commit", "external diligence"):
+              assert marker in text, marker
+          PY
+      - name: Phase 25 acceptance tests
+        run: python -m pytest -q tests/test_phase21_25_program.py -k phase25
+      - name: Compile release contract
+        run: python -m compileall -q src/services/release_manifest.py
