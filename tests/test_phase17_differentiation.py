@@ -3,18 +3,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+REQUIRED = (
+    ROOT / "docs" / "DEMONSTRABLE_DIFFERENTIATION.md",
+    ROOT / ".github" / "workflows" / "phase17-differentiation.yml",
+    ROOT / "src" / "services" / "report_analysis.py",
+    ROOT / "src" / "services" / "retrieval.py",
+    ROOT / "src" / "api" / "routes" / "reports.py",
+    ROOT / "src" / "core" / "billing.py",
+    ROOT / "src" / "core" / "observability.py",
+    ROOT / "src" / "api" / "main.py",
+)
+
+
 def test_phase17_assets_exist_and_are_nonempty() -> None:
-    required = [
-        ROOT / "docs" / "DEMONSTRABLE_DIFFERENTIATION.md",
-        ROOT / ".github" / "workflows" / "phase17-differentiation.yml",
-        ROOT / "src" / "services" / "report_analysis.py",
-        ROOT / "src" / "services" / "retrieval.py",
-        ROOT / "src" / "api" / "routes" / "reports.py",
-        ROOT / "src" / "core" / "billing.py",
-        ROOT / "src" / "core" / "observability.py",
-        ROOT / "src" / "api" / "main.py",
-    ]
-    for path in required:
+    for path in REQUIRED:
         assert path.is_file(), path
         assert path.stat().st_size > 0, path
 
