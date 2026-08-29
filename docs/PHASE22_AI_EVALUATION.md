@@ -15,6 +15,8 @@ Phase 22 establishes a measurable evaluation layer for extraction and retrieval 
 - Model/provider integrations remain replaceable and are disabled unless explicitly configured.
 - No generated output is represented as diagnosis, treatment advice, or clinical decision support.
 
+The evaluation boundary explicitly tests **prompt injection** handling so untrusted retrieved or uploaded text cannot override system safety instructions.
+
 ## Evidence boundary
 
 Phase 22 produces engineering measurements. It does not establish clinical accuracy, medical-device performance, regulatory clearance, or suitability for real patient care. Clinical validation requires representative data, an approved protocol, qualified reviewers, and independent evidence.
