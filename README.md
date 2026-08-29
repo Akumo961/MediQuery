@@ -31,6 +31,7 @@ MediQuery is intentionally engineered so that experimental or planned AI capabil
 - Local FAISS retrieval utilities as an exploratory retrieval foundation
 - Provider-agnostic architecture for future grounded AI capabilities
 - Clear separation between deterministic extraction and future generative/RAG features
+- Deterministic synthetic evaluation utilities for finding matching and retrieval citation coverage
 - Medical-AI safety boundary documented in `AI_SAFETY.md`
 
 ### Security, privacy & reliability
@@ -41,6 +42,7 @@ MediQuery is intentionally engineered so that experimental or planned AI capabil
 - Security headers and explicit CORS configuration
 - Environment-based secret management
 - Production configuration that fails closed on insecure defaults
+- Production deployment control contract for managed database, private storage, TLS/WAF, scanning, backups, and isolated processing
 - Synthetic demonstration data for development/testing
 - No production credentials or real patient data in the repository
 
@@ -48,11 +50,13 @@ MediQuery is intentionally engineered so that experimental or planned AI capabil
 
 - Unit, API, security, extraction, authorization, deletion, telemetry, retrieval-contract, and entitlement tests
 - Deterministic synthetic test data
+- Accessibility metadata contracts for commercial UI controls
 - Formatting and linting checks
 - Python compilation checks
-- GitHub Actions quality gate
+- GitHub Actions quality gate and phase-specific acceptance gates
 - Docker-based local deployment/smoke environment
 - Documented production deployment requirements and operational gaps
+- Final release evidence manifest for buyer handoff
 
 ## Architecture
 
@@ -155,9 +159,10 @@ MediQuery is built around several principles:
 MediQuery/
 ├── src/
 │   ├── api/                 # FastAPI application and routes
+│   ├── core/                # Settings, safety, production and compliance contracts
 │   ├── models/              # Persistence models
 │   ├── schemas/             # Pydantic contracts
-│   ├── services/            # Extraction, retrieval, telemetry, billing, etc.
+│   ├── services/            # Extraction, retrieval, evaluation, release, telemetry, billing
 │   └── ...
 ├── tests/                   # Synthetic unit/API/security tests
 ├── app.py                   # Streamlit client
@@ -168,7 +173,8 @@ MediQuery/
 ├── DEPLOYMENT.md            # Deployment requirements
 ├── PERFORMANCE.md           # Performance measurements and trade-offs
 ├── ACQUISITION.md           # Technical acquisition overview
-└── BUYER_DUE_DILIGENCE.md   # Buyer risk assessment
+├── BUYER_DUE_DILIGENCE.md   # Buyer risk assessment
+└── RELEASE_CHECKLIST.md     # Final release/buyer gate
 ```
 
 ## Quality Gate
@@ -182,7 +188,7 @@ python -m pytest -q
 python -m compileall -q src app.py
 ```
 
-The GitHub Actions workflow provides the repeatable repository quality gate for formatting, linting, tests, compilation, and secret-shaped credential scanning.
+The GitHub Actions workflow provides the repeatable repository quality gate for formatting, linting, tests, compilation, and secret-shaped credential scanning. Phase-specific workflows provide independent acceptance gates through Phase 25.
 
 ## Local Development
 
@@ -220,19 +226,26 @@ The client defaults to `http://localhost:8000`. Set `MEDIQUERY_API_URL` when usi
 
 MediQuery is a **production-shaped engineering foundation**, not a clinically validated product.
 
-The following are intentionally **not currently implemented** in the protected report flow:
+The following remain external or not fully represented as production evidence:
 
-- Production generative-model integration
-- Populated production medical RAG knowledge base
-- Clinical diagnosis or clinical decision support
-- OCR for scanned PDFs
-- Live Stripe/payment processing
-- Managed production storage/database/monitoring infrastructure
+- Managed production infrastructure and provider accounts
 - Clinical validation or regulatory clearance
 - Compliance certification such as HIPAA, PIPEDA, PHIPA, GDPR, or SOC 2
 - Verified customer traction or revenue
+- Completed IP-transfer and legal diligence
+- Production medical-data authorization
 
 Historical prototype artifacts or placeholder model/data files are not treated as evidence of a trained production model or validated accuracy.
+
+## Final Program: Phases 21–25
+
+- **Phase 21 — Production Infrastructure:** fail-closed managed deployment contract, storage/TLS/WAF, scanning, backups, and isolated processing requirements.
+- **Phase 22 — AI/Retrieval Evaluation:** deterministic synthetic extraction metrics, retrieval grounding coverage, provenance, and prompt-injection evaluation boundaries.
+- **Phase 23 — Commercial Product:** accessibility, keyboard/status contracts, responsive UX requirements, entitlement and billing safety boundaries.
+- **Phase 24 — Trust/Security/Compliance:** threat-model, privacy, clinical, IP, operational, and evidence-control matrix.
+- **Phase 25 — Final Sale Readiness:** exact-release manifest, buyer data room, reproducible demonstration, and final engineering gate.
+
+See `docs/PHASE21_PRODUCTION_INFRASTRUCTURE.md` through `docs/PHASE25_FINAL_SALE_READINESS.md` and `RELEASE_CHECKLIST.md`.
 
 ## Production Deployment Requirements
 
@@ -250,33 +263,6 @@ A real sensitive-data deployment would require, at minimum:
 10. Legal, privacy, security, provider, and clinical review appropriate to the target market.
 
 See `DEPLOYMENT.md` and `SECURITY.md` before considering sensitive-data deployment.
-
-## Roadmap
-
-### AI / Retrieval
-
-- Evaluated synthetic extraction datasets
-- OCR with measured extraction quality
-- Curated, versioned, licence-reviewed medical knowledge retrieval
-- Source-attributed educational explanations
-- Retrieval and grounded-answer evaluation
-- Human-factors and clinical review
-
-### Production Engineering
-
-- Managed Postgres and private object storage
-- Isolated asynchronous workers
-- Malware scanning
-- Production monitoring
-- Browser-level accessibility and responsive testing
-- Stronger account recovery/session controls
-
-### Commercialization
-
-- Verified payment-provider webhooks
-- Production web client if Streamlit no longer meets UX requirements
-- Customer research and pricing validation
-- Appropriate legal/privacy/security/regulatory work
 
 ## Licensing & IP
 
