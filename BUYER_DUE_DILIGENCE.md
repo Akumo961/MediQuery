@@ -27,6 +27,10 @@ A six-figure valuation becomes more credible only if those assets are combined w
 | Traction | None claimed | Major commercial risk |
 | Compliance | None claimed | Legal/compliance diligence required |
 
+## Medical safety boundary
+
+MediQuery is **not a diagnostic service**. It is not an emergency service, doctor replacement, or clinically validated medical device. The repository must not be presented as evidence of clinical diagnosis, treatment recommendation, clinical decision support, or regulatory clearance.
+
 ## Technical risks
 
 ### 1. Architecture/product surface
