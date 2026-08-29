@@ -12,17 +12,23 @@ MediQuery organizes detectable report text for education and discussion with a q
 - Scanned/unreadable reports return an explicit limitation rather than fabricated results.
 - The unsafe fixed-output vision endpoints are not mounted in the current API. No clinical image finding is represented as real analysis.
 - PubMed failures return no results; the previous fabricated fallback papers were removed.
+- Phase 18 adds a deterministic, model-agnostic output policy in `src/core/medical_safety.py` that blocks diagnostic/treatment instructions and handles reviewed urgent-language patterns with a fixed emergency handoff.
+- Future report text and user questions are explicitly wrapped as untrusted data by the safety prompt contract.
 
-## Planned AI/RAG controls
+## AI/RAG controls
 
 If an AI explanation feature is enabled, it must use versioned, licence-reviewed sources and return source IDs/URLs next to each educational claim. Patient report text must be handled as untrusted data inside delimiters, never as instructions. Retrieval must be tenant-scoped for patient data, score-filtered, token-bounded, and evaluated against prompt-injection, hallucination, citation, and urgent-situation test sets.
 
-Urgent language should direct users to local emergency services or a qualified clinician based on a reviewed policy, without attempting triage or diagnosis. Any deployment also needs clinical, legal, and human-factors review plus ongoing evaluation and incident handling.
+Urgent language must use a reviewed safety policy and direct users to local emergency services or a qualified clinician without automated triage. Diagnostic claims, prescribing, dosing, and medication start/stop instructions are outside the permitted educational boundary and are rejected by the Phase 18 policy layer. Any deployment also needs clinical, legal, privacy, security, and human-factors review plus ongoing evaluation and incident handling.
 
 ## Retrieval foundation
 
 `src/services/retrieval.py` enforces mandatory source identity, publisher, URL, version, and licence metadata; chunks content at sentence boundaries; relevance-filters and deduplicates results; and produces attribution alongside a bounded context that labels source text as untrusted data. It is a reusable contract, not a populated medical knowledge base or a live model integration.
 
+## Phase 18 evidence
+
+The Phase 18 acceptance suite is in `tests/test_medical_safety.py` and `.github/workflows/phase18-medical-ai-safety.yml`. It verifies safe educational output, blocks diagnostic/treatment instructions, provides the fixed urgent handoff, and verifies that report/question content is treated as untrusted data.
+
 ## Known limitations
 
-The deterministic parser is deliberately conservative but is not a medical-lab parser for all layouts, units, languages, tables, or reference conventions. It cannot validate the clinical correctness of a report, calculate risk, detect every abnormality, or replace original-document review. No RAG or generative-report explanation is currently enabled in the protected report flow.
+The deterministic parser is deliberately conservative but is not a medical-lab parser for all layouts, units, languages, tables, or reference conventions. It cannot validate the clinical correctness of a report, calculate risk, detect every abnormality, or replace original-document review. No RAG or generative-report explanation is currently enabled in the protected report flow. The Phase 18 policy is a deterministic guardrail, not proof of universal model safety or clinical validity.
