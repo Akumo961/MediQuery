@@ -64,6 +64,4 @@ def validate_evidence_map(evidence: dict[str, str]) -> None:
         if not evidence.get(control.control_id, "").strip()
     ]
     if missing:
-        raise ValueError(
-            "Compliance-readiness evidence missing: " + ", ".join(missing)
-        )
+        raise ValueError("Compliance-readiness evidence missing: " + ", ".join(missing))
