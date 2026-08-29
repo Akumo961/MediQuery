@@ -16,6 +16,8 @@ Phase 21 converts the production-shaped repository into an explicit, fail-closed
 - Health/readiness and aggregate monitoring must be available without exposing report content.
 - Production configuration uses a fail-closed policy instead of silently using SQLite or development secrets.
 
+The production contract **fails closed** when a mandatory control is missing; the application must not silently fall back to insecure development configuration.
+
 ## Evidence boundary
 
 The repository provides a machine-testable `ProductionRequirements` contract. Managed accounts, provider configuration, backup exercises, uptime history, and real PHI authorization remain external evidence and are not represented as completed by source code alone.
