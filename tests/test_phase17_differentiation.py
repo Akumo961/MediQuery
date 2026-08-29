@@ -20,9 +20,8 @@ def test_phase17_assets_exist_and_are_nonempty() -> None:
 
 
 def test_phase17_documentation_declares_scope_and_boundaries() -> None:
-    document = (
-        ROOT / "docs" / "DEMONSTRABLE_DIFFERENTIATION.md"
-    ).read_text(encoding="utf-8")
+    doc_path = ROOT / "docs" / "DEMONSTRABLE_DIFFERENTIATION.md"
+    document = doc_path.read_text(encoding="utf-8")
     assert "Phase 17" in document
     assert "What is deliberately not claimed" in document
     assert "Buyer demonstration script" in document
