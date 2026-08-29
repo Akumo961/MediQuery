@@ -4,7 +4,6 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from src.api.main import app
-from src.core.database import SessionLocal, User
 from src.services.retrieval import (
     KnowledgeSource,
     RetrievedChunk,
@@ -23,7 +22,10 @@ def test_evidence_first_extraction_preserves_source_facts() -> None:
         "Glucose: 126 mg/dL (70 - 99 mg/dL) HIGH",
         page=3,
     )
-    assert [(item.name, item.value, item.unit, item.reference_range, item.flag, item.page) for item in findings] == [
+    assert [
+        (item.name, item.value, item.unit, item.reference_range, item.flag, item.page)
+        for item in findings
+    ] == [
         ("Hemoglobin", "11.2", "g/dL", "12.0 - 16.0 g/dL", "low", 3),
         ("Glucose", "126", "mg/dL", "70 - 99 mg/dL", "high", 3),
     ]
@@ -85,31 +87,39 @@ def test_report_access_is_owner_scoped() -> None:
         password = "a-long-enough-password"
         owner_email = f"phase17-owner-{uuid4().hex}@example.test"
         other_email = f"phase17-other-{uuid4().hex}@example.test"
-        owner = client.post(
+        owner_response = client.post(
             "/api/auth/signup",
             json={
                 "email": owner_email,
                 "password": password,
                 "acknowledge_medical_limitations": True,
             },
-        ).json()["access_token"]
-        other = client.post(
+        )
+        other_response = client.post(
             "/api/auth/signup",
             json={
                 "email": other_email,
                 "password": password,
                 "acknowledge_medical_limitations": True,
             },
-        ).json()["access_token"]
-        response = client.get("/api/reports", headers={"Authorization": f"Bearer {other}"})
-        assert response.status_code == 200
-        assert response.json() == []
-
-        db = SessionLocal()
+        )
+        assert owner_response.status_code == 201
+        assert other_response.status_code == 201
+        owner = owner_response.json()["access_token"]
+        other = other_response.json()["access_token"]
         try:
-            assert db.query(User).filter(User.email == owner_email).first() is not None
+            response = client.get(
+                "/api/reports", headers={"Authorization": f"Bearer {other}"}
+            )
+            assert response.status_code == 200
+            assert response.json() == []
         finally:
-            db.close()
+            client.delete(
+                "/api/auth/account", headers={"Authorization": f"Bearer {owner}"}
+            )
+            client.delete(
+                "/api/auth/account", headers={"Authorization": f"Bearer {other}"}
+            )
 
 
 def test_billing_boundary_is_provider_neutral() -> None:
@@ -119,7 +129,9 @@ def test_billing_boundary_is_provider_neutral() -> None:
 
 
 def test_metrics_and_audit_boundaries_do_not_use_report_content() -> None:
-    observability = (ROOT / "src" / "core" / "observability.py").read_text(encoding="utf-8")
+    observability = (
+        ROOT / "src" / "core" / "observability.py"
+    ).read_text(encoding="utf-8")
     database = (ROOT / "src" / "core" / "database.py").read_text(encoding="utf-8")
     assert "evidence" not in observability
     assert "report text" in database
@@ -127,7 +139,9 @@ def test_metrics_and_audit_boundaries_do_not_use_report_content() -> None:
 
 
 def test_phase17_documentation_contains_explicit_boundaries() -> None:
-    document = (ROOT / "docs" / "DEMONSTRABLE_DIFFERENTIATION.md").read_text(encoding="utf-8")
+    document = (
+        ROOT / "docs" / "DEMONSTRABLE_DIFFERENTIATION.md"
+    ).read_text(encoding="utf-8")
     required = [
         "Evidence-first extraction",
         "Owner isolation",
