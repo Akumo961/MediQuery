@@ -13,22 +13,40 @@ class ComplianceControl:
 
 CONTROLS = (
     ComplianceControl(
-        "PRIV-01", "privacy", "data map and retention policy", "privacy/legal"
+        "PRIV-01",
+        "privacy",
+        "data map and retention policy",
+        "privacy/legal",
     ),
     ComplianceControl(
-        "SEC-01", "security", "independent assessment and remediation record", "security"
+        "SEC-01",
+        "security",
+        "independent assessment and remediation record",
+        "security",
     ),
     ComplianceControl(
-        "AI-01", "medical AI safety", "evaluation set, safety tests, and review record", "AI/clinical"
+        "AI-01",
+        "medical AI safety",
+        "evaluation set, safety tests, and review record",
+        "AI/clinical",
     ),
     ComplianceControl(
-        "IP-01", "intellectual property", "contributor and dependency licence inventory", "legal"
+        "IP-01",
+        "intellectual property",
+        "contributor and dependency licence inventory",
+        "legal",
     ),
     ComplianceControl(
-        "OPS-01", "operations", "backup/restore and incident-response evidence", "operations"
+        "OPS-01",
+        "operations",
+        "backup/restore and incident-response evidence",
+        "operations",
     ),
     ComplianceControl(
-        "PROD-01", "production", "deployment configuration and environment evidence", "engineering"
+        "PROD-01",
+        "production",
+        "deployment configuration and environment evidence",
+        "engineering",
     ),
 )
 
