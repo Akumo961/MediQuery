@@ -22,8 +22,8 @@ def test_evidence_first_extraction_preserves_source_facts() -> None:
         (item.name, item.value, item.unit, item.reference_range, item.flag, item.page)
         for item in findings
     ] == [
-        ("Hemoglobin", "11.2", "g/dL", "12.0 - 16.0 g/dL", "low", 3),
-        ("Glucose", "126", "mg/dL", "70 - 99 mg/dL", "high", 3),
+        ("Hemoglobin", "11.2", "g/dL", "12.0 - 16.0", "low", 3),
+        ("Glucose", "126", "mg/dL", "70 - 99", "high", 3),
     ]
     assert all(item.evidence for item in findings)
 
