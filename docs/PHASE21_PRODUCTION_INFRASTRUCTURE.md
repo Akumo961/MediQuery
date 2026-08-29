@@ -14,7 +14,7 @@ Phase 21 converts the production-shaped repository into an explicit, fail-closed
 - Uploads require malware scanning and resource limits.
 - Backups must have tested restore procedures.
 - Health/readiness and aggregate monitoring must be available without exposing report content.
-- Production configuration fails closed instead of silently using SQLite or development secrets.
+- Production configuration uses a fail-closed policy instead of silently using SQLite or development secrets.
 
 ## Evidence boundary
 
