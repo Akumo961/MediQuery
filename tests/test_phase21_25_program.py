@@ -9,7 +9,10 @@ from src.core.production_readiness import (
     ProductionRequirements,
     production_contract_is_complete,
 )
-from src.frontend.accessibility import validate_interactive_metadata, validate_status_message
+from src.frontend.accessibility import (
+    validate_interactive_metadata,
+    validate_status_message,
+)
 from src.services.evaluation import (
     ExpectedFinding,
     evaluate_findings,
