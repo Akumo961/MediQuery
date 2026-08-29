@@ -68,13 +68,12 @@ def test_release_checklist_requires_all_phase_gates() -> None:
 
 def test_repository_safety_boundaries_remain_explicit() -> None:
     readme = read("README.md")
+    acquisition = read("ACQUISITION.md")
     security = read("SECURITY.md")
     deployment = read("DEPLOYMENT.md")
-    for marker in (
-        "not a diagnostic service",
-        "not approved for real patient/phi processing",
-    ):
-        assert marker in (readme + security + deployment), marker
+    combined = readme + acquisition + security + deployment
+    assert "not a diagnostic service" in combined
+    assert "not approved for real patient/phi processing" in combined
     assert "managed postgres" in deployment
     assert "tls/waf" in deployment
     assert "malware scanning" in deployment
