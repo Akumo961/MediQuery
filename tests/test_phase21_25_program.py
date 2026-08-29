@@ -5,9 +5,16 @@ from pathlib import Path
 import pytest
 
 from src.core.compliance import CONTROLS, required_control_ids, validate_evidence_map
-from src.core.production_readiness import ProductionRequirements, production_contract_is_complete
+from src.core.production_readiness import (
+    ProductionRequirements,
+    production_contract_is_complete,
+)
 from src.frontend.accessibility import validate_interactive_metadata, validate_status_message
-from src.services.evaluation import ExpectedFinding, evaluate_findings, retrieval_grounding_coverage
+from src.services.evaluation import (
+    ExpectedFinding,
+    evaluate_findings,
+    retrieval_grounding_coverage,
+)
 from src.services.release_manifest import ReleaseManifest, release_is_candidate
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +26,14 @@ def read(path: str) -> str:
 
 def test_phase21_document_and_production_contract_exist() -> None:
     document = read("docs/PHASE21_PRODUCTION_INFRASTRUCTURE.md")
-    for marker in ("phase 21", "managed postgres", "tls/waf", "malware scanning", "backup", "fail closed"):
+    for marker in (
+        "phase 21",
+        "managed postgres",
+        "tls/waf",
+        "malware scanning",
+        "backup",
+        "fail closed",
+    ):
         assert marker in document
     requirements = ProductionRequirements(
         database_url="postgresql://managed",
@@ -38,10 +52,20 @@ def test_phase21_document_and_production_contract_exist() -> None:
 
 def test_phase22_evaluation_is_deterministic() -> None:
     document = read("docs/PHASE22_AI_EVALUATION.md")
-    for marker in ("phase 22", "synthetic benchmark", "precision", "recall", "provenance", "prompt injection"):
+    for marker in (
+        "phase 22",
+        "synthetic benchmark",
+        "precision",
+        "recall",
+        "provenance",
+        "prompt injection",
+    ):
         assert marker in document
     result = evaluate_findings(
-        [ExpectedFinding("Glucose", "5.2", "mmol/L"), ExpectedFinding("ignored", "x")],
+        [
+            ExpectedFinding("Glucose", "5.2", "mmol/L"),
+            ExpectedFinding("ignored", "x"),
+        ],
         [ExpectedFinding("glucose", "5.2", "MMOL/L")],
     )
     assert result.matched == 1
@@ -51,17 +75,34 @@ def test_phase22_evaluation_is_deterministic() -> None:
 
 def test_phase23_accessibility_contract_is_enforced() -> None:
     document = read("docs/PHASE23_COMMERCIAL_PRODUCT.md")
-    for marker in ("phase 23", "accessibility", "keyboard", "responsive", "accessible name"):
+    for marker in (
+        "phase 23",
+        "accessibility",
+        "keyboard",
+        "responsive",
+        "accessible name",
+    ):
         assert marker in document
-    validate_interactive_metadata({"label": "Upload", "name": "upload", "description": "Choose a PDF"})
+    validate_interactive_metadata(
+        {"label": "Upload", "name": "upload", "description": "Choose a PDF"}
+    )
     validate_status_message("Upload complete", "status")
     with pytest.raises(ValueError):
-        validate_interactive_metadata({"label": "", "name": "upload", "description": "Choose a PDF"})
+        validate_interactive_metadata(
+            {"label": "", "name": "upload", "description": "Choose a PDF"}
+        )
 
 
 def test_phase24_compliance_readiness_is_evidence_based() -> None:
     document = read("docs/PHASE24_TRUST_SECURITY_COMPLIANCE.md")
-    for marker in ("phase 24", "threat model", "privacy", "clinical review", "ip", "not a certification"):
+    for marker in (
+        "phase 24",
+        "threat model",
+        "privacy",
+        "clinical review",
+        "ip",
+        "not a certification",
+    ):
         assert marker in document
     assert len(required_control_ids()) == len(CONTROLS)
     evidence = {control.control_id: "external-review-record" for control in CONTROLS}
@@ -70,7 +111,13 @@ def test_phase24_compliance_readiness_is_evidence_based() -> None:
 
 def test_phase25_release_manifest_fails_closed() -> None:
     document = read("docs/PHASE25_FINAL_SALE_READINESS.md")
-    for marker in ("phase 25", "buyer data room", "release manifest", "exact commit", "external diligence"):
+    for marker in (
+        "phase 25",
+        "buyer data room",
+        "release manifest",
+        "exact commit",
+        "external diligence",
+    ):
         assert marker in document
     manifest = ReleaseManifest(
         commit="abcdef1234567",
