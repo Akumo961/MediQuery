@@ -5,9 +5,15 @@ REQUIRED_INTERACTIVE_FIELDS = ("label", "name", "description")
 
 def validate_interactive_metadata(metadata: dict[str, str]) -> None:
     """Require accessible names and descriptions for generated UI controls."""
-    missing = [field for field in REQUIRED_INTERACTIVE_FIELDS if not metadata.get(field, "").strip()]
+    missing = [
+        field
+        for field in REQUIRED_INTERACTIVE_FIELDS
+        if not metadata.get(field, "").strip()
+    ]
     if missing:
-        raise ValueError("Accessible interactive control metadata missing: " + ", ".join(missing))
+        raise ValueError(
+            "Accessible interactive control metadata missing: " + ", ".join(missing)
+        )
 
 
 def validate_status_message(message: str, role: str = "status") -> None:
