@@ -1,183 +1,94 @@
 # MediQuery — Privacy-Conscious Medical Report Intelligence
 
-> **Production-oriented AI engineering foundation for secure medical-report organization, structured extraction, and future grounded retrieval.**
+MediQuery is a production-shaped software platform for securely organizing text-based medical PDF reports, extracting structured laboratory findings, preserving page-level evidence, and enforcing authenticated owner isolation.
 
-**FastAPI** · **Python** · **PostgreSQL/SQLite** · **Streamlit** · **PDF Processing** · **FAISS** · **Docker** · **GitHub Actions** · **AI Safety**
+> **Medical safety boundary:** MediQuery is an educational report-organization tool. It is **not** a diagnostic service, emergency service, doctor replacement, clinical decision-support system, or clinically validated medical device. Extracted information must be checked against the original report and discussed with a qualified healthcare professional.
 
-## Overview
+## What works today
 
-MediQuery is a privacy-conscious medical-report organization platform designed to help users securely upload text-based PDF reports, extract structured findings with source evidence, review the results, and manage their reports through an authenticated interface.
+- Authenticated signup/login with password hashing and expiring JWTs.
+- Owner-scoped report access with IDOR protection.
+- Layered PDF validation: extension, advisory MIME validation, magic bytes, size, page count, encryption, and parser checks.
+- Private server-generated storage keys for uploaded reports.
+- Deterministic text extraction with `pypdf` and conservative laboratory-value parsing.
+- Laboratory values, units, reference ranges, explicit flags, page numbers, and source evidence are persisted.
+- Numeric laboratory units such as `10^3/uL` and `10*9/L` are supported, including common CBC formats such as WBC and Platelets.
+- Partial-extraction warnings are surfaced when lab-shaped lines cannot be safely parsed.
+- Report history, detail, deletion, and account deletion with database/file cleanup.
+- Deterministic PubMed keyword search; semantic/RAG search is not represented as an implemented production capability.
+- Streamlit client for the verified user-facing workflow.
+- Automated unit/API/security/extraction/E2E tests and GitHub Actions quality gates.
+- Docker production-shaped API image and Compose configuration validation.
 
-The project focuses on the engineering challenges around sensitive-document AI: **validation, authorization, tenant/owner isolation, conservative extraction, traceability, privacy-aware telemetry, testing, and safe AI integration boundaries**.
+## Verified primary journey
 
-MediQuery is intentionally engineered so that experimental or planned AI capabilities are not presented as clinical functionality.
+```text
+Login
+  ↓
+Upload PDF
+  ↓
+Processing
+  ↓
+Extracted values
+  ↓
+Page-level evidence
+  ↓
+Report history/detail
+  ↓
+Account management / deletion
+```
 
-> **Medical safety boundary:** MediQuery is an educational report-organization tool. It is **not** a diagnostic service, emergency service, doctor replacement, or clinically validated medical device. Extracted information must be checked against the original report and discussed with a qualified healthcare professional.
-
-## What is implemented
-
-### Secure document workflow
-
-- Authenticated signup/login and owner-scoped report access
-- Server-side PDF validation using extension, MIME advisory checks, magic bytes, size, page count, encryption, and malformed-content checks
-- Private generated storage keys instead of public report URLs
-- Report history, detail, deletion, and account deletion
-- Conservative structured extraction of values, units, reference ranges, explicit flags, page numbers, and source evidence
-- Explicit handling of unsupported/scanned reports rather than fabricated extraction results
-
-### AI engineering foundation
-
-- Structured extraction pipeline with replaceable service boundaries
-- Local FAISS retrieval utilities as an exploratory retrieval foundation
-- Provider-agnostic architecture for future grounded AI capabilities
-- Clear separation between deterministic extraction and future generative/RAG features
-- Deterministic synthetic evaluation utilities for finding matching and retrieval citation coverage
-- Medical-AI safety boundary documented in `AI_SAFETY.md`
-
-### Security, privacy & reliability
-
-- JWT authentication and owner-scoped authorization
-- Request IDs and PHI-conscious aggregate telemetry
-- Rate-limit telemetry and safe error responses
-- Security headers and explicit CORS configuration
-- Environment-based secret management
-- Production configuration that fails closed on insecure defaults
-- Production deployment control contract for managed database, private storage, TLS/WAF, scanning, backups, and isolated processing
-- Synthetic demonstration data for development/testing
-- No production credentials or real patient data in the repository
-
-### Testing & delivery
-
-- Unit, API, security, extraction, authorization, deletion, telemetry, retrieval-contract, and entitlement tests
-- Deterministic synthetic test data
-- Accessibility metadata contracts for commercial UI controls
-- Formatting and linting checks
-- Python compilation checks
-- GitHub Actions quality gate and phase-specific acceptance gates
-- Docker-based local deployment/smoke environment
-- Documented production deployment requirements and operational gaps
-- Final release evidence manifest for buyer handoff
+The repository includes an explicit E2E acceptance test covering this journey with synthetic laboratory data, including WBC/Platelets using `10^3/uL` units.
 
 ## Architecture
 
 ```text
-                         ┌──────────────────────┐
-                         │   Streamlit Client   │
-                         │ Upload / Review      │
-                         └──────────┬───────────┘
-                                    │ HTTPS + JWT
-                                    ▼
-                         ┌──────────────────────┐
-                         │       FastAPI        │
-                         │ Auth / API / Policy  │
-                         └──────────┬───────────┘
-                                    │
-                 ┌──────────────────┼──────────────────┐
-                 │                  │                  │
-                 ▼                  ▼                  ▼
-        ┌────────────────┐  ┌────────────────┐  ┌───────────────┐
-        │ Upload         │  │ Structured     │  │ Entitlements  │
-        │ Validation     │  │ Extraction     │  │ + Usage       │
-        └───────┬────────┘  └───────┬────────┘  └───────────────┘
-                │                   │
-                ▼                   ▼
-        ┌────────────────┐  ┌────────────────┐
-        │ Private        │  │ PostgreSQL /   │
-        │ Storage        │  │ SQLite         │
-        └────────────────┘  └───────┬────────┘
-                                    │
-                                    ▼
-                           ┌──────────────────┐
-                           │ Owner-Scoped     │
-                           │ Report Viewer    │
-                           └──────────────────┘
-
-                 Future / replaceable boundary
-                           ┌───────────────┐
-                           │ Curated RAG   │
-                           │ + Grounded AI │
-                           └───────────────┘
+Streamlit Client
+      │ HTTPS + JWT
+      ▼
+FastAPI API
+ ┌────┼───────────────┐
+ │    │               │
+ ▼    ▼               ▼
+Auth Reports      Usage/Policy
+      │
+      ▼
+PDF validation + deterministic extraction
+      │
+      ├── private PDF storage
+      └── PostgreSQL / SQLite
+              │
+              ▼
+       owner-scoped findings
+       + page-level evidence
 ```
 
-## AI / Retrieval Design
+The protected report workflow deliberately does **not** call an LLM or ML model. This is an evidence-first design choice: extracted facts remain tied to source PDF text rather than being generated by a free-form model.
 
-The protected report workflow deliberately keeps medical facts tied to source evidence instead of asking a free-form model to invent or reinterpret findings.
+## AI / RAG status — intentionally explicit
 
-A future grounded AI workflow is designed around the following boundary:
+MediQuery should **not** be marketed as an AI diagnostic product.
 
-```text
-Medical Report
-     │
-     ▼
-Validation / Extraction
-     │
-     ▼
-Structured Findings + Page Evidence
-     │
-     ▼
-Curated / Licensed Knowledge Base
-     │
-     ▼
-Bounded Retrieval
-     │
-     ▼
-Grounded Educational Explanation
-     │
-     ▼
-Source Attribution + Safety Controls
-```
+The current protected report path is deterministic (`pypdf` + regex). Earlier experimental ML/retrieval prototypes have been removed from the active repository because they were not part of the verified product workflow. Literature search is deterministic keyword overlap ranking.
 
-Any generative medical feature must remain educational, source-attributed, bounded by retrieval, resistant to prompt injection, tenant-isolated, and evaluated before being considered for deployment.
+Future grounded AI could be added behind a replaceable service boundary, but no clinical AI capability is claimed by this release.
 
-## Engineering Principles
+## Security posture
 
-MediQuery is built around several principles:
+- Password hashing with scrypt and per-password salt.
+- JWT expiration and token-type validation.
+- Owner-scoped database queries for report authorization.
+- `404` on cross-owner report access to reduce resource enumeration.
+- Server-generated storage paths; user filenames are never used as filesystem paths.
+- Request rate limiting and PHI-conscious aggregate telemetry.
+- Security headers and explicit CORS configuration.
+- Production configuration fails closed on insecure defaults.
+- Account deletion cascades reports/findings and removes stored report files.
+- Synthetic data only for development and tests.
 
-1. **Security before AI** — authentication, authorization, validation, and privacy boundaries are application controls, not prompt instructions.
-2. **Evidence over invention** — extracted values preserve page/source evidence and unsupported inputs produce explicit limitations.
-3. **Replaceable AI boundaries** — vendor-specific models, storage, retrieval, and billing are isolated behind service interfaces.
-4. **Fail closed** — insecure defaults and unsupported medical workflows should not silently become enabled production behavior.
-5. **Measure before claiming** — accuracy, clinical usefulness, compliance, and production readiness are not claimed without reproducible evidence.
+See `SECURITY.md`, `AI_SAFETY.md`, `DEPLOYMENT.md`, and `BUYER_DUE_DILIGENCE.md`.
 
-## Technology Stack
-
-| Layer | Technologies |
-|---|---|
-| API | Python, FastAPI, Pydantic |
-| Authentication | Password hashing, JWT, owner-scoped authorization |
-| Data | SQLAlchemy, SQLite/PostgreSQL, Alembic |
-| Documents | pypdf, server-side PDF validation, structured extraction |
-| Retrieval | FAISS utilities / replaceable retrieval boundary |
-| Client | Streamlit |
-| Infrastructure | Docker, Docker Compose |
-| Quality | Pytest, Black, Flake8, Compileall, GitHub Actions |
-| Operations | Request IDs, rate-limit telemetry, PHI-conscious metrics |
-
-## Repository Structure
-
-```text
-MediQuery/
-├── src/
-│   ├── api/                 # FastAPI application and routes
-│   ├── core/                # Settings, safety, production and compliance contracts
-│   ├── models/              # Persistence models
-│   ├── schemas/             # Pydantic contracts
-│   ├── services/            # Extraction, retrieval, evaluation, release, telemetry, billing
-│   └── ...
-├── tests/                   # Synthetic unit/API/security tests
-├── app.py                   # Streamlit client
-├── ARCHITECTURE.md          # System design and trust boundaries
-├── SECURITY.md              # Security/privacy posture and gaps
-├── AI_SAFETY.md             # Medical-AI safety boundary
-├── TESTING.md               # Test strategy and release gaps
-├── DEPLOYMENT.md            # Deployment requirements
-├── PERFORMANCE.md           # Performance measurements and trade-offs
-├── ACQUISITION.md           # Technical acquisition overview
-├── BUYER_DUE_DILIGENCE.md   # Buyer risk assessment
-└── RELEASE_CHECKLIST.md     # Final release/buyer gate
-```
-
-## Quality Gate
+## Testing and CI
 
 Run locally:
 
@@ -188,21 +99,18 @@ python -m pytest -q
 python -m compileall -q src app.py
 ```
 
-The GitHub Actions workflow provides the repeatable repository quality gate for formatting, linting, tests, compilation, and secret-shaped credential scanning. Phase-specific workflows provide independent acceptance gates through Phase 25.
+GitHub Actions runs the Python quality gate plus a real Docker image build and Docker Compose configuration validation on Ubuntu.
 
-## Local Development
+The E2E acceptance test is `tests/test_e2e_buyer_journey.py`.
 
-### Prerequisites
-
-- Python 3.11+
-- Virtual environment
-- Docker Desktop (optional for the production-shaped smoke environment)
+## Local development
 
 ### API
 
 ```bash
 python -m venv .venv
-.venv\\Scripts\\activate
+# Windows PowerShell
+.venv\Scripts\activate
 pip install -r requirements.txt
 Copy-Item .env.example .env
 uvicorn src.api.main:app --reload --port 8000
@@ -216,60 +124,54 @@ In a second terminal:
 streamlit run app.py
 ```
 
-The client defaults to `http://localhost:8000`. Set `MEDIQUERY_API_URL` when using another API endpoint.
+The client defaults to `http://localhost:8000`. Set `MEDIQUERY_API_URL` for another API endpoint.
 
-### Development safety
+### Docker API
 
-**Use synthetic data only.** The local SQLite database and `private_uploads` directory are not suitable for real patient reports.
+Create an untracked `.env` containing a managed PostgreSQL `DATABASE_URL`, a unique `JWT_SECRET`, and HTTPS `CORS_ORIGINS`, then:
 
-## Current Scope & Honest Limitations
+```bash
+docker compose up --build
+```
 
-MediQuery is a **production-shaped engineering foundation**, not a clinically validated product.
+The Compose stack intentionally contains the API service and private upload volume. Streamlit remains a separate client deployment.
 
-The following remain external or not fully represented as production evidence:
+## Production boundary
 
-- Managed production infrastructure and provider accounts
-- Clinical validation or regulatory clearance
-- Compliance certification such as HIPAA, PIPEDA, PHIPA, GDPR, or SOC 2
-- Verified customer traction or revenue
-- Completed IP-transfer and legal diligence
-- Production medical-data authorization
+A real sensitive-data deployment requires additional operational controls that are outside a source repository alone:
 
-Historical prototype artifacts or placeholder model/data files are not treated as evidence of a trained production model or validated accuracy.
-
-## Final Program: Phases 21–25
-
-- **Phase 21 — Production Infrastructure:** fail-closed managed deployment contract, storage/TLS/WAF, scanning, backups, and isolated processing requirements.
-- **Phase 22 — AI/Retrieval Evaluation:** deterministic synthetic extraction metrics, retrieval grounding coverage, provenance, and prompt-injection evaluation boundaries.
-- **Phase 23 — Commercial Product:** accessibility, keyboard/status contracts, responsive UX requirements, entitlement and billing safety boundaries.
-- **Phase 24 — Trust/Security/Compliance:** threat-model, privacy, clinical, IP, operational, and evidence-control matrix.
-- **Phase 25 — Final Sale Readiness:** exact-release manifest, buyer data room, reproducible demonstration, and final engineering gate.
-
-See `docs/PHASE21_PRODUCTION_INFRASTRUCTURE.md` through `docs/PHASE25_FINAL_SALE_READINESS.md` and `RELEASE_CHECKLIST.md`.
-
-## Production Deployment Requirements
-
-A real sensitive-data deployment would require, at minimum:
-
-1. Managed PostgreSQL with appropriate access controls.
+1. Managed PostgreSQL with restricted access.
 2. Private encrypted object storage.
 3. TLS behind an appropriate reverse proxy/WAF.
 4. Managed secret storage and rotation.
 5. Isolated asynchronous document processing.
 6. Malware scanning and resource limits.
-7. Backups and tested restore procedures.
-8. PHI-conscious monitoring and error reporting.
-9. Database migration and rollback procedures.
+7. Backups and tested restoration.
+8. PHI-conscious monitoring and incident response.
+9. Migration/rollback procedures.
 10. Legal, privacy, security, provider, and clinical review appropriate to the target market.
 
-See `DEPLOYMENT.md` and `SECURITY.md` before considering sensitive-data deployment.
+MediQuery does **not** claim HIPAA, PIPEDA, PHIPA, GDPR, SOC 2, regulatory clearance, clinical validation, or production medical-data authorization merely because engineering controls exist in this repository.
 
-## Licensing & IP
+## Commercial / buyer documentation
 
-There is currently **no repository licence grant**. Do not assume the project is MIT-licensed or otherwise freely reusable.
+- `ACQUISITION.md` — technical acquisition overview.
+- `BUYER_DUE_DILIGENCE.md` — risks, controls, and verification status.
+- `BUYER_DATA_ROOM.md` — buyer evidence/data-room structure.
+- `SECURITY.md` — security and privacy posture.
+- `ARCHITECTURE.md` — system architecture and trust boundaries.
+- `AI_SAFETY.md` — medical-AI safety boundary.
+- `DEPLOYMENT.md` — production deployment requirements.
+- `RELEASE_CHECKLIST.md` — release and sale gate.
+- `PERFORMANCE.md` — performance measurements and trade-offs.
+- `docs/PHASE21_25_PROGRAM.md` — final production-to-sale program.
 
-Before commercial use, perform a dependency/model/data licence inventory and verify ownership, contributor rights, medical-source provenance, and third-party intellectual-property obligations.
+## Licensing and IP
 
-## Disclaimer
+There is currently **no repository licence grant**. Commercial use requires a dependency/IP/data-provenance inventory, ownership verification, contributor-rights review, and an explicit transaction agreement.
 
-MediQuery is an AI engineering and software-development project for educational and portfolio purposes. It does not provide medical diagnosis, treatment recommendations, emergency guidance, or clinical decision support.
+## Current commercial position
+
+MediQuery is best presented as a **health-tech software asset / engineering platform** with a working secure document workflow, not as a certified medical device or autonomous clinical AI.
+
+The product's strongest buyer assets are its working end-to-end workflow, deterministic evidence preservation, owner isolation, deletion controls, security engineering, tests, documentation, and clear separation between implemented functionality and future capabilities.
