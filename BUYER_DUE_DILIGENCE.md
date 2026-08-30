@@ -68,7 +68,7 @@ No claim is made for:
 
 ## IP and transaction diligence
 
-There is currently no general repository licence grant. Before acquisition, verify source-code ownership, contributor rights, dependency licences, data/source provenance, trademarks, historical artifacts, and the exact assets included in the transaction.
+There is currently no general repository licence grant. Before acquisition, verify source-code ownership, contributor rights, dependency licences, data/source provenance, trademarks, historical artifacts, and the exact assets included in the transaction. **Legal review is required before any commercial transfer.**
 
 ## Commercial diligence
 
