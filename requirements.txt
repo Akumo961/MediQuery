@@ -1,5 +1,5 @@
 # =============================================
-# MediQuery AI - Runtime and development requirements
+# MediQuery - Runtime and development requirements
 # =============================================
 
 # Core web framework
@@ -11,17 +11,6 @@ python-multipart==0.0.6
 streamlit==1.28.0
 plotly==5.17.0
 
-# AI / ML
-transformers==4.35.2
-torch==2.1.2
-torchvision==0.16.2
-sentence-transformers==2.2.2
-faiss-cpu==1.7.4
-
-# Image processing
-pillow==10.1.0
-opencv-python==4.8.1.78
-
 # Document processing
 pypdf==3.17.0
 
@@ -29,7 +18,6 @@ pypdf==3.17.0
 numpy==1.24.3
 pandas==2.1.4
 scikit-learn==1.3.2
-matplotlib==3.7.2
 
 # HTTP / API clients
 requests==2.31.0
@@ -41,10 +29,9 @@ python-dotenv==1.0.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
 
-# Search / NLP
+# Search / NLP utilities used by the deterministic literature feature
 nltk==3.8.1
 spacy==3.7.2
-# python -m spacy download en_core_web_sm
 
 # Database / caching
 redis==5.0.1
