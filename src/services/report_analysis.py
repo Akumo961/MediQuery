@@ -11,13 +11,14 @@ from pypdf import PdfReader
 PDF_MAGIC = b"%PDF-"
 MAX_EVIDENCE_CHARS = 500
 
-# Keep the value/unit grammar deliberately conservative. In particular, the unit
-# must start with a letter so a reference range such as ``12.0 - 16.0`` cannot
-# be swallowed as a unit.
+# Keep the value/unit grammar deliberately conservative. Units may begin with a
+# letter (g/dL, mmol/L) or a numeric multiplier (10^3/uL, 10*9/L), both common
+# in real laboratory reports. The optional unit is still bounded so reference
+# ranges cannot be swallowed as units.
 LAB_PATTERN = re.compile(
     r"^(?P<name>[A-Za-z][A-Za-z0-9 /()'\-]{1,80}?)\s*[:\t]+\s*"
     r"(?P<value>[<>]?\s*\d+(?:\.\d+)?)\s*"
-    r"(?P<unit>[A-Za-zµμ][A-Za-zµμ0-9/%^.\-]*)?\s*"
+    r"(?P<unit>(?:[A-Za-zµμ]|\d)[A-Za-zµμ0-9/%^.\-*]*)?\s*"
     r"(?:\(?\s*(?P<range>\d+(?:\.\d+)?\s*(?:-|–|to)\s*\d+(?:\.\d+)?|[<>]\s*\d+(?:\.\d+)?)\s*\)?)?\s*"
     r"(?P<flag>H|L|High|Low|Normal)?\s*$",
     re.IGNORECASE,
@@ -27,6 +28,10 @@ REFERENCE_RANGE_PATTERN = re.compile(
 )
 FLAG_PATTERN = re.compile(
     r"^Flag\s*:\s*(?P<flag>high|low|normal|h|l)\s*$", re.IGNORECASE
+)
+CANDIDATE_LINE_PATTERN = re.compile(
+    r"^[A-Za-z][A-Za-z0-9 /()'\-]{1,80}?\s*[:\t]+\s*[<>]?\s*\d+(?:\.\d+)?",
+    re.IGNORECASE,
 )
 
 
@@ -82,6 +87,7 @@ def extract_report(raw: bytes, max_pages: int) -> ExtractionResult:
         raise ReportValidationError("The report has too many pages")
 
     findings: list[ExtractedFinding] = []
+    partial_candidates = 0
     extracted_any_text = False
     for page_number, page in enumerate(reader.pages, start=1):
         try:
@@ -90,7 +96,9 @@ def extract_report(raw: bytes, max_pages: int) -> ExtractionResult:
             text = ""
         if text.strip():
             extracted_any_text = True
-            findings.extend(parse_findings(text, page_number))
+            page_findings, page_partial_candidates = _parse_page_findings(text, page_number)
+            findings.extend(page_findings)
+            partial_candidates += page_partial_candidates
 
     note = None
     if not extracted_any_text:
@@ -98,12 +106,18 @@ def extract_report(raw: bytes, max_pages: int) -> ExtractionResult:
             "No selectable text was found. This may be a scanned report; "
             "OCR is not yet enabled."
         )
+    elif partial_candidates:
+        noun = "candidate was" if partial_candidates == 1 else "candidates were"
+        note = (
+            f"{partial_candidates} lab-value {noun} detected but could not be safely parsed. "
+            "Review the original report; unsupported formats are not silently treated as extracted values."
+        )
     elif not findings:
         note = (
             "Text was extracted, but no lab-value candidates could be safely "
             "identified. Review the original report."
         )
-    return ExtractionResult(page_count=len(reader.pages), findings=findings, note=note)
+    return ExtractionResult(page_count=len(reader.pages), findings=findings[:200], note=note)
 
 
 def _normalize_flag(raw_flag: str | None) -> str:
@@ -121,10 +135,11 @@ def _parse_reference_range(value: str) -> str | None:
     return normalized or None
 
 
-def parse_findings(text: str, page: int) -> list[ExtractedFinding]:
-    """Extract conservative lab candidates without treating reference/flag lines as labs."""
+def _parse_page_findings(text: str, page: int) -> tuple[list[ExtractedFinding], int]:
+    """Parse one page and count lab-shaped lines that fail the safe grammar."""
     findings: list[ExtractedFinding] = []
     seen: set[tuple[str, str, str | None]] = set()
+    partial_candidates = 0
     lines = [" ".join(line.split()) for line in text.splitlines()]
 
     for index, normalized in enumerate(lines):
@@ -132,6 +147,8 @@ def parse_findings(text: str, page: int) -> list[ExtractedFinding]:
             continue
         match = LAB_PATTERN.match(normalized)
         if not match:
+            if CANDIDATE_LINE_PATTERN.match(normalized):
+                partial_candidates += 1
             continue
 
         name = match.group("name").strip(" :-")
@@ -181,4 +198,10 @@ def parse_findings(text: str, page: int) -> list[ExtractedFinding]:
                 evidence=" · ".join(evidence_lines)[:MAX_EVIDENCE_CHARS],
             )
         )
+    return findings, partial_candidates
+
+
+def parse_findings(text: str, page: int) -> list[ExtractedFinding]:
+    """Extract conservative lab candidates without treating reference/flag lines as labs."""
+    findings, _ = _parse_page_findings(text, page)
     return findings[:200]
