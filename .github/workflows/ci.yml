@@ -27,3 +27,22 @@ jobs:
         run: |
           ! grep -RInE --exclude-dir=.git --exclude-dir=mediqueryvenv310 --exclude='*.ipynb' \
             '(AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' .
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    needs: python-quality
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production API image
+        run: docker build --pull -t mediquery-api:ci .
+      - name: Validate Compose configuration
+        env:
+          DATABASE_URL: postgresql://mediquery:ci@db:5432/mediquery
+          JWT_SECRET: ci-only-secret-that-is-long-enough-for-validation
+          CORS_ORIGINS: https://app.example.test
+        run: |
+          printf '%s\n' \
+            'DATABASE_URL=postgresql://mediquery:ci@db:5432/mediquery' \
+            'JWT_SECRET=ci-only-secret-that-is-long-enough-for-validation' \
+            'CORS_ORIGINS=https://app.example.test' > .env
+          docker compose config --quiet
