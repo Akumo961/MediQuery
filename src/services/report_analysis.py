@@ -13,12 +13,16 @@ MAX_EVIDENCE_CHARS = 500
 
 # Keep the value/unit grammar deliberately conservative. Units may begin with a
 # letter (g/dL, mmol/L) or a numeric multiplier (10^3/uL, 10*9/L), both common
-# in real laboratory reports. The optional unit is still bounded so reference
-# ranges cannot be swallowed as units.
+# in real laboratory reports. Numeric units are restricted to multiplier forms
+# so a reference range such as ``(3.9-5.6)`` cannot be swallowed as a unit.
+UNIT_PATTERN = (
+    r"(?:[A-Za-zµμ][A-Za-zµμ0-9/%^.\-*]*|"
+    r"10(?:\^|\*)\d+[A-Za-zµμ0-9/%^.\-*]*)"
+)
 LAB_PATTERN = re.compile(
     r"^(?P<name>[A-Za-z][A-Za-z0-9 /()'\-]{1,80}?)\s*[:\t]+\s*"
     r"(?P<value>[<>]?\s*\d+(?:\.\d+)?)\s*"
-    r"(?P<unit>(?:[A-Za-zµμ]|\d)[A-Za-zµμ0-9/%^.\-*]*)?\s*"
+    rf"(?P<unit>{UNIT_PATTERN})?\s*"
     r"(?:\(?\s*(?P<range>\d+(?:\.\d+)?\s*(?:-|–|to)\s*\d+(?:\.\d+)?|[<>]\s*\d+(?:\.\d+)?)\s*\)?)?\s*"
     r"(?P<flag>H|L|High|Low|Normal)?\s*$",
     re.IGNORECASE,
