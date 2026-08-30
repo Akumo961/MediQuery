@@ -98,7 +98,7 @@ Possible transaction structures include:
 3. Exclusive commercial licence with transition support.
 4. Acquisition plus a short technical handover period.
 
-Legal counsel should define the final asset schedule, representations, warranties, IP assignment, confidentiality, liabilities, and post-closing obligations.
+Legal counsel should define the final asset schedule, representations, warranties, IP assignment, confidentiality, liabilities, and post-closing obligations. Commercial and legal diligence are required before any transaction.
 
 ## 12. Final disclosure
 
