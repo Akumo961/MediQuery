@@ -70,7 +70,11 @@ There is currently no general repository licence grant. Before acquisition, veri
 
 ## Commercial diligence
 
-No customer revenue, retention, partnership, or market traction is claimed unless separately documented. A CAD $100,000+ asking price can be used as a negotiation anchor, but it is not a guaranteed valuation. Final consideration depends on strategic fit, transferable IP, technical diligence, buyer-specific replacement cost, and demonstrated time-to-market benefit.
+No customer revenue, retention, partnership, or market traction is claimed unless separately documented.
+
+**No verified customer traction is claimed unless independently documented.**
+
+A CAD $100,000+ asking price can be used as a negotiation anchor, but it is not a guaranteed valuation. Final consideration depends on strategic fit, transferable IP, technical diligence, buyer-specific replacement cost, and demonstrated time-to-market benefit.
 
 ## Buyer acceptance checklist
 
