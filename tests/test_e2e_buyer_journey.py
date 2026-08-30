@@ -64,7 +64,10 @@ def test_login_upload_extract_evidence_report_and_account_management() -> None:
         deletion = client.delete("/api/auth/account", headers=headers)
         assert deletion.status_code == 204
 
-        assert client.post(
-            "/api/auth/login", json={"email": email, "password": password}
-        ).status_code == 401
+        assert (
+            client.post(
+                "/api/auth/login", json={"email": email, "password": password}
+            ).status_code
+            == 401
+        )
         assert client.get("/api/reports", headers=headers).status_code == 401

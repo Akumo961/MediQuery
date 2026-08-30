@@ -16,8 +16,7 @@ MAX_EVIDENCE_CHARS = 500
 # in real laboratory reports. Numeric units are restricted to multiplier forms
 # so a reference range such as ``(3.9-5.6)`` cannot be swallowed as a unit.
 UNIT_PATTERN = (
-    r"(?:[A-Za-zµμ][A-Za-zµμ0-9/%^.\-*]*|"
-    r"10(?:\^|\*)\d+[A-Za-zµμ0-9/%^.\-*]*)"
+    r"(?:[A-Za-zµμ][A-Za-zµμ0-9/%^.\-*]*|" r"10(?:\^|\*)\d+[A-Za-zµμ0-9/%^.\-*]*)"
 )
 LAB_PATTERN = re.compile(
     r"^(?P<name>[A-Za-z][A-Za-z0-9 /()'\-]{1,80}?)\s*[:\t]+\s*"
@@ -100,7 +99,9 @@ def extract_report(raw: bytes, max_pages: int) -> ExtractionResult:
             text = ""
         if text.strip():
             extracted_any_text = True
-            page_findings, page_partial_candidates = _parse_page_findings(text, page_number)
+            page_findings, page_partial_candidates = _parse_page_findings(
+                text, page_number
+            )
             findings.extend(page_findings)
             partial_candidates += page_partial_candidates
 
@@ -121,7 +122,9 @@ def extract_report(raw: bytes, max_pages: int) -> ExtractionResult:
             "Text was extracted, but no lab-value candidates could be safely "
             "identified. Review the original report."
         )
-    return ExtractionResult(page_count=len(reader.pages), findings=findings[:200], note=note)
+    return ExtractionResult(
+        page_count=len(reader.pages), findings=findings[:200], note=note
+    )
 
 
 def _normalize_flag(raw_flag: str | None) -> str:
