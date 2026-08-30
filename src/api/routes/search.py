@@ -11,16 +11,15 @@ from src.core.observability import elapsed_ms, metrics
 from src.data_loader import MedicalDataLoader
 
 router = APIRouter()
-
 MAX_QUERY_CHARS = 300
 
 
 class SearchQuery(BaseModel):
-    """Request body for literature search."""
+    """Request body for the deterministic literature search."""
 
     query: str = Field(..., min_length=1, max_length=MAX_QUERY_CHARS)
     max_results: int = Field(10, ge=1, le=50)
-    search_type: str = Field("semantic", pattern="^(semantic|keyword|hybrid)$")
+    search_type: str = Field("keyword", pattern="^keyword$")
 
 
 class SearchResult(BaseModel):
@@ -39,17 +38,9 @@ def _get_loader() -> MedicalDataLoader:
     return MedicalDataLoader()
 
 
-@lru_cache(maxsize=1)
-def _get_text_model():
-    """Load the semantic model once per worker rather than once per request."""
-    from models.text_models import MedicalTextModel
-
-    return MedicalTextModel()
-
-
 @router.post("/literature", response_model=List[SearchResult])
 async def search_literature(search_query: SearchQuery):
-    """Search PubMed and rank papers by semantic or keyword relevance."""
+    """Search PubMed using deterministic keyword overlap ranking."""
     started = perf_counter()
     metrics.increment("rag.searches")
     try:
@@ -60,37 +51,6 @@ async def search_literature(search_query: SearchQuery):
             metrics.increment("rag.empty_results")
             metrics.observe_ms("rag.search_latency", elapsed_ms(started))
             return []
-
-        documents = [
-            f"{paper.get('title', '')} {paper.get('abstract', '')}" for paper in papers
-        ]
-        if search_query.search_type in {"semantic", "hybrid"}:
-            similar_docs = _get_text_model().find_similar_documents(
-                search_query.query,
-                documents,
-                top_k=search_query.max_results,
-            )
-            results = []
-            for doc_info in similar_docs:
-                paper_index = doc_info.get("index", -1)
-                if not 0 <= paper_index < len(papers):
-                    continue
-                paper = papers[paper_index]
-                results.append(
-                    SearchResult(
-                        title=paper.get("title", "Unknown Title"),
-                        content=paper.get("abstract", "No abstract available"),
-                        similarity=doc_info["similarity"],
-                        source="PubMed",
-                        metadata={
-                            "authors": paper.get("authors", []),
-                            "journal": paper.get("journal", "Unknown"),
-                            "year": paper.get("year", "Unknown"),
-                        },
-                    )
-                )
-            metrics.observe_ms("rag.search_latency", elapsed_ms(started))
-            return results
 
         results = []
         query_terms = set(search_query.query.lower().split())
