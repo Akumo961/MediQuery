@@ -64,6 +64,8 @@ No claim is made for:
 - clinical decision support;
 - treatment recommendations.
 
+**No clinical validation is claimed.**
+
 ## IP and transaction diligence
 
 There is currently no general repository licence grant. Before acquisition, verify source-code ownership, contributor rights, dependency licences, data/source provenance, trademarks, historical artifacts, and the exact assets included in the transaction.
