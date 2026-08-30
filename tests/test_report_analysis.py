@@ -3,17 +3,20 @@ import pytest
 from src.services.report_analysis import (
     ReportValidationError,
     parse_findings,
-    validate_pdf,
 )
 
 
 def test_rejects_non_pdf_content() -> None:
     with pytest.raises(ReportValidationError, match="not a valid PDF"):
+        from src.services.report_analysis import validate_pdf
+
         validate_pdf("report.pdf", "application/pdf", b"not-a-pdf", 1024)
 
 
 def test_rejects_oversized_report() -> None:
     with pytest.raises(ReportValidationError, match="exceeds"):
+        from src.services.report_analysis import validate_pdf
+
         validate_pdf("report.pdf", "application/pdf", b"%PDF-" + b"x" * 100, 32)
 
 
@@ -60,3 +63,34 @@ Flag: HIGH"""
         "150 - 400 x10^9/L",
         "70 - 99 mg/dL",
     ]
+
+
+def test_parses_numeric_multiplier_units_used_by_real_cbc_reports() -> None:
+    text = """WBC: 11.8 10^3/uL (4.0-11.0) High
+Platelets: 250 10^3/uL (150-400) Normal"""
+
+    findings = parse_findings(text, page=3)
+
+    assert [finding.name for finding in findings] == ["WBC", "Platelets"]
+    assert [finding.unit for finding in findings] == ["10^3/uL", "10^3/uL"]
+    assert [finding.value for finding in findings] == ["11.8", "250"]
+    assert [finding.flag for finding in findings] == ["high", "normal"]
+
+
+def test_does_not_consume_reference_range_as_numeric_unit() -> None:
+    findings = parse_findings("Glucose: 5.4 (3.9-5.6) Normal", page=1)
+
+    assert len(findings) == 1
+    assert findings[0].unit is None
+    assert findings[0].reference_range == "3.9-5.6"
+
+
+def test_candidate_with_unsupported_format_is_counted_for_extraction_warning() -> None:
+    from src.services.report_analysis import _parse_page_findings
+
+    findings, partial_candidates = _parse_page_findings(
+        "Vitamin D: 42 ???\nHemoglobin: 13.2 g/dL", page=1
+    )
+
+    assert len(findings) == 1
+    assert partial_candidates == 1
