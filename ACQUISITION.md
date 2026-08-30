@@ -2,215 +2,106 @@
 
 ## 1. Executive summary
 
-MediQuery is a lean medical-report organization platform built around authenticated report upload, conservative structured extraction, evidence preservation, owner-scoped access, usage entitlements, and privacy-conscious operational controls.
+MediQuery is a lean health-tech software asset built around authenticated medical-report upload, deterministic structured extraction, page-level evidence, owner-scoped access, usage controls, deletion, security engineering, testing, and deployment documentation.
 
-The acquisition value is **not** a claim of clinical capability, regulatory approval, revenue, or market traction. The current asset is an engineering foundation that reduces the work required to turn a prototype into a validated commercial workflow.
+The acquisition thesis is **engineering acceleration and reusable product/IP**, not claimed clinical capability, regulatory approval, revenue, or market traction.
 
-**Current status:** production-shaped engineering foundation; **not approved for real patient/PHI processing**.
+**Current status:** working production-shaped engineering foundation; **not approved for real patient/PHI processing**.
 
-**Medical boundary:** MediQuery is **not a diagnostic service**, emergency service, doctor replacement, or clinically validated medical device. Extracted information must be checked against the original report and any medical interpretation must be performed by an appropriately qualified healthcare professional.
+**Medical boundary:** MediQuery is not a diagnostic service, emergency service, doctor replacement, clinically validated medical device, or autonomous clinical AI.
 
-## 2. Implemented vs. potential
+## 2. Implemented
 
-### Implemented
+- FastAPI API with authenticated signup/login.
+- Owner-scoped report history, detail, and deletion.
+- Layered PDF validation.
+- Conservative deterministic extraction using `pypdf` and regex.
+- Laboratory values, units, reference ranges, flags, page numbers, and source evidence.
+- Numeric CBC units such as `10^3/uL` and `10*9/L`.
+- Partial-extraction attention warnings.
+- Account deletion with report/file cleanup.
+- Usage entitlement and metering foundation.
+- Request IDs, aggregate telemetry, rate limiting, protected metrics.
+- Streamlit reference client.
+- Automated tests including the primary E2E journey.
+- GitHub quality and Docker gates.
+- Security, architecture, safety, deployment, diligence, and commercial documentation.
 
-- FastAPI API with authentication and authorization.
-- Owner-scoped report history/detail/deletion.
-- Server-side PDF validation and conservative structured extraction.
-- Preservation of values, units, reference ranges, explicit flags, page numbers, and source evidence.
-- Account deletion and report deletion paths.
-- Server-side Free/Pro entitlement abstraction and durable usage metering.
-- Request IDs, aggregate operational telemetry, rate-limit counters, and protected metrics.
-- Containerized local deployment path.
-- Automated formatting, linting, tests, compilation, and credential-pattern scanning.
-- Documentation covering architecture, security, AI safety, testing, deployment, performance, acquisition, and buyer due diligence.
+## 3. Deliberately not claimed as implemented
 
-### Potential / not currently represented as implemented product capability
-
-- Production Gemini or other generative-model integration.
-- Populated, curated medical RAG knowledge base/Pinecone deployment.
+- LLM-based medical interpretation.
+- Clinical diagnosis or treatment recommendations.
+- Production medical RAG.
 - OCR for scanned reports.
-- Clinical interpretation, diagnosis, triage, or clinical decision support.
-- Live Stripe billing and webhook reconciliation.
-- Managed cloud database/object storage/observability.
-- Production Next.js/React web application.
-- Clinical validation, regulatory clearance, compliance certification, customer traction, or revenue.
+- Clinical validation or regulatory clearance.
+- HIPAA/PIPEDA/PHIPA/GDPR/SOC 2 certification.
+- Live payment-provider integration.
+- Managed production infrastructure.
+- Verified customer traction or revenue.
 
-This separation is intentional and should be preserved during diligence.
+## 4. Technical asset
 
-## 3. Technical assets
+The buyer receives, subject to the definitive transaction agreement:
 
-A buyer receives a working source repository containing:
-
+- Source repository.
 - API and persistence layer.
-- Authentication/authorization boundaries.
-- Document validation and extraction pipeline.
-- Structured report/finding schemas.
-- Retrieval foundation with provenance contracts.
-- Entitlement and usage-metering foundation.
-- Operational telemetry foundation.
-- Streamlit application client.
-- Automated tests and synthetic report fixtures.
+- Authentication/authorization controls.
+- Document validation/extraction pipeline.
+- Evidence-preserving report/finding schemas.
+- Streamlit client.
+- Tests and synthetic fixtures.
 - Docker/Compose deployment artifacts.
-- Engineering and operational documentation.
+- Engineering, security, safety, deployment, and buyer documentation.
 
-## 4. Architecture
+## 5. Why the asset can save engineering time
 
-The architecture is intentionally small: client → authenticated API → validation/extraction → private storage/database → owner-scoped report viewer. Vendor-specific AI, retrieval, billing, storage, and telemetry capabilities are designed as replaceable boundaries.
+A buyer does not need to begin from an empty repository. The release already establishes a coherent secure document workflow, ownership boundary, evidence model, deletion lifecycle, testing discipline, CI quality gates, and deployment shape.
 
-This limits infrastructure cost and gives a future engineering team a clear migration path toward managed services without requiring a platform rewrite.
+The remaining work is explicit rather than hidden: production infrastructure, broader document coverage, OCR, clinical/product validation, privacy/legal work, customer validation, and any future AI layer.
 
-See `ARCHITECTURE.md` for trust boundaries and deployment details.
+## 6. Security and privacy
 
-## 5. AI capabilities and safety posture
+Application controls include authenticated access, owner-scoped authorization, layered PDF validation, server-generated storage paths, safe errors, security headers, CORS controls, rate limiting, and deletion paths.
 
-The protected report workflow deliberately does not convert unverified generative output into medical facts. The extraction representation retains source evidence and explicitly handles unreadable/scanned reports as limitations.
+These controls do not constitute a compliance certification. Real sensitive-data deployment requires managed infrastructure, private storage, secret management, malware scanning, isolated processing, backups/restore testing, monitoring, incident response, and applicable privacy/security/legal review.
 
-The retrieval code provides provenance, relevance filtering, bounded context, and prompt-injection framing, but it is **not** a populated production medical knowledge base.
+## 7. Commercial positioning
 
-Any future medical-information explanation capability should be introduced only after source licensing, evaluation, clinical/human-factors review, prompt-injection testing, citation verification, and operational controls are established.
+Present MediQuery as a **health-tech software/IP asset** that accelerates a medical-document workflow. Do not present it as a certified medical product or autonomous medical AI.
 
-## 6. RAG infrastructure
+A CAD $100,000+ asking price may be used as a negotiation anchor, but it is not a guaranteed valuation. Final price depends on strategic fit, clean transferable IP, buyer replacement cost, product roadmap fit, and demonstrated time-to-market benefit.
 
-The repository contains a reusable retrieval foundation with mandatory source metadata and attribution contracts. It can support a curated knowledge workflow, but a buyer must not interpret its presence as evidence of production medical RAG quality or clinical accuracy.
+## 8. Buyer demo
 
-The architecture is suitable for adding Pinecone or another managed vector service if evaluation demonstrates that the additional infrastructure is justified.
+Use `docs/BUYER_DEMO_SCRIPT.md` and synthetic data. Demonstrate:
 
-## 7. User experience
+`Login → Upload PDF → Processing → Extracted Values → Evidence → Report → Account Deletion`
 
-The current client supports a straightforward authenticated journey:
+For the video version use `docs/BUYER_VIDEO_SCRIPT.md`.
 
-1. Create an account and acknowledge the product limitations.
-2. Upload a supported text-based PDF.
-3. Process the report through server-side validation/extraction.
-4. Review extracted candidates with evidence and page references.
-5. Delete the report when it is no longer required.
+## 9. Buyer diligence
 
-A production-grade web experience remains a product investment rather than something this repository should falsely represent as complete.
+Use `BUYER_DUE_DILIGENCE.md`, `BUYER_DATA_ROOM.md`, and `docs/FINAL_SECURITY_AUDIT.md`. A buyer should reproduce the CI/Docker gates, run the E2E test, review the threat model, inspect IP/dependencies, and conduct its own security/privacy/clinical/legal diligence.
 
-## 8. Deployment and operations
+## 10. Strategic buyer outreach
 
-The repository includes a production-shaped local container environment and deployment guidance. Production use requires managed Postgres, private encrypted object storage, TLS/WAF, secret management, isolated asynchronous processing, malware scanning, backups/restore testing, monitoring, migrations, and appropriate provider/legal agreements.
+The initial Canada/Québec target strategy is documented in `docs/BUYER_OUTREACH_STRATEGY.md`. Target existing healthcare software, clinical workflow, laboratory, patient-experience, and health-data companies. Contact CEO/founder, CTO/VP Engineering, product leadership, partnerships, or corporate development rather than generic recruiting channels.
 
-The current repository does not provide evidence of a live production SLA, uptime history, disaster-recovery exercise, or managed observability account.
+## 11. Acquisition structures
 
-## 9. Security controls
+Possible transaction structures include:
 
-Implemented controls include authentication, owner-scoped access, upload validation, private generated storage keys, deletion paths, security headers, CORS restrictions, safe errors, request IDs, rate limiting, and privacy-conscious telemetry.
+1. Full software/IP acquisition.
+2. Asset acquisition with source/documentation transfer.
+3. Exclusive commercial licence with transition support.
+4. Acquisition plus a short technical handover period.
 
-These controls do **not** establish HIPAA, PIPEDA, PHIPA, GDPR, SOC 2, or any other compliance certification. Security suitability for real medical data depends on deployment configuration, contracts, policies, operations, and independent review.
+Legal counsel should define the final asset schedule, representations, warranties, IP assignment, confidentiality, liabilities, and post-closing obligations.
 
-## 10. Potential customers
+## 12. Final disclosure
 
-Potential customer categories, subject to validation, include:
+MediQuery's strongest assets are its working secure workflow, deterministic evidence preservation, owner isolation, deletion controls, tests, CI, deployment shape, and explicit engineering boundaries.
 
-- Consumer health-navigation products.
-- Clinics and allied-health organizations needing patient-facing report organization.
-- Laboratories or benefits/navigation providers seeking a report-review workflow component.
-- Health-tech platforms seeking a white-label report-ingestion and organization layer.
+Its principal risks are also explicit: no verified customers/revenue, no clinical validation, no regulatory certification, no production authorization for real patient data, and no implemented clinical AI.
 
-These are **potential markets**, not existing customers.
-
-## 11. Potential acquirers
-
-Potential acquirer categories, subject to strategic fit and diligence, include:
-
-- Digital-health companies.
-- Health-navigation and benefits platforms.
-- Laboratory/diagnostic software companies.
-- Clinical workflow vendors.
-- Health-data infrastructure companies.
-- AI application companies seeking a privacy-conscious medical-document workflow.
-
-No partnership, acquisition interest, or commercial relationship is claimed.
-
-## 12. Business models
-
-Possible models include:
-
-- Privacy-conscious consumer subscription.
-- B2B per-seat or per-organization licensing.
-- White-label/API licensing.
-- Usage-based document processing, where economics and safety controls support it.
-
-Pricing and willingness-to-pay require market validation.
-
-## 13. Competitive advantages
-
-Potential advantages are currently architectural/workflow advantages rather than proven moats:
-
-- Conservative evidence-preserving extraction rather than opaque free-form output.
-- Explicit owner-scoped report boundaries.
-- Safety-conscious product positioning.
-- Vendor-neutral seams for AI, retrieval, billing, storage, and telemetry.
-- Small infrastructure footprint and understandable codebase.
-- Synthetic test foundation and unusually candid documentation of limitations.
-
-A buyer should assume that core technical concepts are reproducible and should seek defensible workflow, data rights, distribution, or customer relationships before treating the product as a durable moat.
-
-## 14. Remaining risks
-
-Material remaining risks include:
-
-- **No verified customer traction.** No customers, revenue, or retention are claimed or verified.
-- **No clinical validation.** No clinical validation or regulatory assessment has been completed.
-- Production infrastructure and operational evidence are incomplete.
-- No live payment-provider integration.
-- OCR and broad document-layout coverage remain incomplete.
-- Medical RAG is a foundation rather than a populated/evaluated production system.
-- Third-party dependency/model/data licence inventory still requires formal diligence.
-- Repository licensing and contributor/IP rights require legal review.
-- Browser accessibility/responsive release testing remains to be completed at staging level.
-- Legal/privacy documentation and market-specific compliance work remain.
-
-## 15. Future roadmap
-
-### Engineering
-
-- Managed database/private object storage.
-- Versioned migrations.
-- Isolated asynchronous extraction workers.
-- Malware scanning and production monitoring.
-- Stronger session lifecycle and account recovery.
-
-### Product/AI
-
-- OCR evaluation.
-- Broader synthetic extraction benchmark.
-- Curated, versioned, licence-reviewed knowledge sources.
-- Evidence-grounded educational explanations after safety evaluation.
-- Human-factors and clinical review.
-
-### Commercial
-
-- Payment-provider integration with verified webhooks.
-- Customer discovery and pricing validation.
-- Production web client if Streamlit is no longer appropriate.
-- Support, incident, privacy, and operational processes.
-
-## 16. What a buyer receives
-
-Subject to a definitive agreement and formal IP/legal diligence, the technical asset consists of the repository source code, tests, documentation, extraction workflow, authentication/authorization boundaries, operational foundations, deployment artifacts, and roadmap.
-
-The buyer does **not** receive or inherit any claim of:
-
-- Users
-- Revenue
-- Patents
-- Exclusive datasets
-- Clinical validation
-- Regulatory clearance
-- Compliance certification
-- Provider agreements
-- Partnerships
-- Guaranteed commercial value
-
-Those items do not exist merely because the code documents a potential path to them.
-
-## 17. Acquisition-readiness assessment
-
-The repository is materially more useful to a technical buyer when its boundaries are explicit: what works, what is tested, what is deliberately disabled, what depends on deployment infrastructure, and what requires non-engineering validation.
-
-A buyer considering a six-figure acquisition should still require a live technical demonstration, independent security review, dependency/IP inventory, deployment evidence, product/customer evidence, and legal diligence before assigning that valuation.
-
-**Bottom line:** MediQuery is an acquisition candidate only as an engineering/product foundation today. A $150,000 purchase price is **not justified by this repository alone**; it becomes a question of demonstrated differentiated IP/workflow, validated product demand, clean rights, and operational/clinical readiness that must be established outside the codebase.
+The correct acquisition pitch is therefore **“buy a disciplined, working health-tech software foundation and accelerate the remaining productization and validation”**, not “buy a finished medical AI company.”
